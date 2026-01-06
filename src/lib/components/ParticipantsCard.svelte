@@ -1,24 +1,29 @@
 <script lang="ts">
   import type { Participant } from '$lib/types';
+  import Avatar from '$lib/components/Avatar.svelte';
 
   export let participants: Participant[] = [];
+  export let showManage = true;
+  export let manageTargetId: string | null = null;
 </script>
 
 <div class="card bg-base-100 border border-base-200 shadow-sm">
   <div class="card-body gap-4">
     <div class="flex items-center justify-between">
       <h3 class="text-lg font-semibold">Participants ({participants.length})</h3>
-      <button class="btn btn-xs btn-ghost text-primary">Manage</button>
+      {#if showManage}
+        {#if manageTargetId}
+          <label class="btn btn-xs btn-ghost text-primary" for={manageTargetId}>Manage</label>
+        {:else}
+          <button class="btn btn-xs btn-ghost text-primary">Manage</button>
+        {/if}
+      {/if}
     </div>
     <div class="space-y-3">
       {#each participants as person}
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="avatar placeholder">
-              <div class="bg-base-200 text-base-content rounded-full w-9">
-                <span>{person.name.slice(0, 1)}</span>
-              </div>
-            </div>
+            <Avatar initials={person.name.slice(0, 1)} status="online" />
             <div>
               <p class="font-semibold text-sm">{person.name}</p>
               {#if person.status === 'organizer'}

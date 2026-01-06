@@ -14,6 +14,11 @@ body {
   min-height: 100vh;
 }
 
+html[data-theme='plannit-dark'] body {
+  background: radial-gradient(circle at top, rgba(23, 230, 142, 0.12), rgba(11, 20, 17, 0.6) 45%),
+    linear-gradient(180deg, rgba(11, 20, 17, 0.98) 0%, rgba(8, 14, 12, 0.98) 100%);
+}
+
 h1,
 h2,
 h3,
@@ -24,6 +29,11 @@ h4 {
 .app-shell {
   background-image: radial-gradient(circle at 20% 10%, rgba(23, 230, 142, 0.16), transparent 45%),
     radial-gradient(circle at 90% 0%, rgba(155, 231, 255, 0.2), transparent 40%);
+}
+
+html[data-theme='plannit-dark'] .app-shell {
+  background-image: radial-gradient(circle at 18% 12%, rgba(23, 230, 142, 0.18), transparent 48%),
+    radial-gradient(circle at 85% 0%, rgba(18, 40, 32, 0.7), transparent 45%);
 }
 
 .card-border {
@@ -68,4 +78,58 @@ h4 {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+calendar-range,
+calendar-month,
+calendar-date {
+  --color-accent: #22c55e !important;
+  --color-text-on-accent: #ffffff !important;
+}
+
+calendar-range::part(container) {
+  gap: 1rem;
+}
+
+calendar-month::part(header) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+calendar-month::part(heading) {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+calendar-range::part(button) {
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  background: transparent;
+  color: hsl(var(--bc)) !important;
+  padding: 0.15rem 0.6rem;
+}
+
+calendar-range::part(button):hover {
+  background: hsl(var(--b2));
+}
+
+calendar-range::part(day) {
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+}
+
+calendar-range::part(day):hover {
+  background: hsl(var(--b2));
+}
+
+calendar-range::part(selected),
+calendar-range::part(range-start),
+calendar-range::part(range-end),
+calendar-range::part(range-inner) {
+  background: hsl(var(--su)) !important;
+  color: hsl(var(--suc)) !important;
 }

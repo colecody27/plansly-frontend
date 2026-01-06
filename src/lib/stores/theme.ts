@@ -11,7 +11,13 @@ export const initTheme = () => {
   }
 
   const stored = localStorage.getItem('plannit-theme');
-  theme.set(stored ?? DEFAULT_THEME);
+  const normalized =
+    stored === 'light'
+      ? 'plannit'
+      : stored === 'dark'
+        ? 'plannit-dark'
+        : stored ?? DEFAULT_THEME;
+  theme.set(normalized);
 
   theme.subscribe((value) => {
     document.documentElement.setAttribute('data-theme', value);

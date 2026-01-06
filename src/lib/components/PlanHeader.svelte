@@ -2,6 +2,17 @@
   export let title = 'Weekend in Joshua Tree';
   export let dateRange = 'June 14-16';
   export let location = 'Joshua Tree, CA';
+  export let showFinalize = true;
+  export let showInvite = true;
+  export let extraActionLabel: string | null = null;
+  export let extraActionHref = '#';
+  export let extraActionVariant: 'outline' | 'ghost' | 'error' = 'outline';
+  export let extraActionClass = '';
+  export let extraActionTargetId: string | null = null;
+  export let inviteTargetId: string | null = null;
+
+  $: extraActionVariantClass =
+    extraActionVariant === 'error' ? 'btn-error' : `btn-${extraActionVariant}`;
 </script>
 
 <div class="space-y-4">
@@ -19,8 +30,30 @@
       </div>
     </div>
     <div class="flex flex-wrap gap-3">
-      <button class="btn btn-outline">Invite Friends</button>
-      <button class="btn btn-primary">Finalize Plan</button>
+      {#if extraActionLabel}
+        {#if extraActionTargetId}
+          <label
+            class={`btn ${extraActionVariantClass} ${extraActionClass}`}
+            for={extraActionTargetId}
+          >
+            {extraActionLabel}
+          </label>
+        {:else}
+          <a class={`btn ${extraActionVariantClass} ${extraActionClass}`} href={extraActionHref}>
+            {extraActionLabel}
+          </a>
+        {/if}
+      {/if}
+      {#if showInvite}
+        {#if inviteTargetId}
+          <label class="btn btn-outline" for={inviteTargetId}>Invite Friends</label>
+        {:else}
+          <button class="btn btn-outline">Invite Friends</button>
+        {/if}
+      {/if}
+      {#if showFinalize}
+        <button class="btn btn-primary">Finalize Plan</button>
+      {/if}
     </div>
   </div>
 </div>

@@ -10,7 +10,7 @@
 <div class="grid gap-4 lg:grid-cols-4">
   <div class="card bg-base-100 border border-base-200 shadow-sm">
     <div class="card-body">
-      <p class="text-xs uppercase tracking-wide text-base-content/50">Total Budget</p>
+      <p class="text-xs uppercase tracking-wide text-base-content/50">Total Cost</p>
       <p class="text-2xl font-semibold">${budget.toLocaleString()}</p>
     </div>
   </div>

@@ -1,76 +1,190 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import AppNav from '$lib/components/AppNav.svelte';
-  import PlanCover from '$lib/components/PlanCover.svelte';
-  import PaymentCard from '$lib/components/PaymentCard.svelte';
+  import PlanHeader from '$lib/components/PlanHeader.svelte';
+  import PlanStats from '$lib/components/PlanStats.svelte';
   import ChatPanel from '$lib/components/ChatPanel.svelte';
-  import ActivityProposals from '$lib/components/ActivityProposals.svelte';
   import ItineraryTimeline from '$lib/components/ItineraryTimeline.svelte';
+  import ParticipantsCard from '$lib/components/ParticipantsCard.svelte';
   import { samplePlanDetail } from '$lib/data/samplePlans';
+
+  const planLocked = true;
+  let activityCost = '';
+  let isAllDay = false;
+  let activityStartTime = '';
+  let activityEndTime = '';
+
+  onMount(async () => {
+    await import('cally');
+  });
+
+  const formatCost = () => {
+    const parsed = Number(activityCost);
+    if (Number.isNaN(parsed)) {
+      activityCost = '';
+      return;
+    }
+    activityCost = parsed.toFixed(2);
+  };
 </script>
 
 <div>
   <AppNav />
   <main class="px-6 lg:px-16 pb-20">
     <section class="section-spacing space-y-8">
-      <div class="grid gap-6 lg:grid-cols-[2fr,1fr]">
-        <PlanCover
-          title="Annual Ski Trip 2024"
-          dateRange="Feb 14 - Feb 16, 2024"
-          location="Aspen, CO"
-        />
-        <div class="space-y-6">
-          <PaymentCard amount={150} note="Covering lodging & food" />
-          <div class="card bg-base-100 border border-base-200 shadow-sm">
-            <div class="card-body">
-              <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold">Attendees (12)</h3>
-                <div class="flex -space-x-2">
-                  <div class="avatar placeholder">
-                    <div class="bg-base-200 rounded-full w-7"><span>A</span></div>
-                  </div>
-                  <div class="avatar placeholder">
-                    <div class="bg-base-200 rounded-full w-7"><span>M</span></div>
-                  </div>
-                  <div class="avatar placeholder">
-                    <div class="bg-base-200 rounded-full w-7"><span>J</span></div>
-                  </div>
-                  <div class="avatar placeholder">
-                    <div class="bg-base-200 rounded-full w-7"><span>+9</span></div>
-                  </div>
-                </div>
-              </div>
+      <PlanHeader
+        title="Weekend in Joshua Tree"
+        dateRange="June 14-16"
+        location="Joshua Tree, CA"
+        showFinalize={false}
+        showInvite={false}
+        extraActionLabel="Leave Plan"
+        extraActionHref="#"
+        extraActionVariant="ghost"
+        extraActionClass="text-error"
+        extraActionTargetId="leave-plan-modal"
+      />
+      {#if planLocked}
+        <div class="card bg-base-100 border border-base-200 shadow-sm">
+          <div class="card-body flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h3 class="text-lg font-semibold">Plan locked - payment required</h3>
+              <p class="text-sm text-base-content/60">Complete your buy-in to confirm your spot.</p>
             </div>
+            <label class="btn btn-primary" for="payment-modal">Pay Now</label>
           </div>
-          <ChatPanel messages={samplePlanDetail.chat} />
         </div>
-      </div>
+      {/if}
+      <PlanStats budget={2400} collected={1200} perPerson={200} countdown="12 Days" />
 
       <div class="grid gap-6 lg:grid-cols-[2fr,1fr]">
         <div class="space-y-6">
-          <div class="card bg-base-100 border border-base-200 shadow-sm">
-            <div class="card-body">
-              <h3 class="text-lg font-semibold">Trip Funding</h3>
-              <p class="text-sm text-base-content/60">Help us cover the Airbnb deposit.</p>
-              <progress class="progress progress-primary" value="75" max="100"></progress>
-              <div class="flex items-center justify-between text-sm text-base-content/60">
-                <span>$3,000 of $4,000 raised</span>
-                <span>75%</span>
-              </div>
-            </div>
-          </div>
-          <div class="card bg-base-100 border border-base-200 shadow-sm">
-            <div class="card-body">
-              <h3 class="text-lg font-semibold">About this trip</h3>
-              <p class="text-sm text-base-content/70">
-                It's finally time for our annual winter getaway. We'll hit the slopes, soak in the hot
-                tub, and wrap up with a cozy group dinner.
-              </p>
-            </div>
-          </div>
-          <ItineraryTimeline activities={samplePlanDetail.activities} />
+          <ItineraryTimeline
+            activities={samplePlanDetail.activities}
+            addTargetId="add-activity-modal"
+            emphasizeAdd={true}
+          />
         </div>
-        <ActivityProposals proposals={samplePlanDetail.proposals} />
+        <div class="space-y-6">
+          <ParticipantsCard participants={samplePlanDetail.participants} showManage={false} />
+          <ChatPanel messages={samplePlanDetail.chat} />
+        </div>
       </div>
     </section>
+
+    <input id="payment-modal" type="checkbox" class="modal-toggle" />
+    <div class="modal" role="dialog">
+      <div class="modal-box">
+        <h3 class="text-lg font-semibold mb-4">Payment Details</h3>
+        <div class="space-y-3">
+          <div class="rounded-2xl border border-base-200 p-4">
+            <p class="text-sm text-base-content/60">Organizer</p>
+            <p class="font-semibold">Sarah Nguyen</p>
+            <p class="text-sm text-base-content/60">Venmo: @sarah-host</p>
+            <p class="text-sm text-base-content/60">
+              Link:
+              <a class="link link-hover text-primary" href="https://plannit.app/pay/placeholder">
+                https://plannit.app/pay/placeholder
+              </a>
+            </p>
+          </div>
+          <div class="rounded-2xl border border-base-200 p-4">
+            <p class="text-sm text-base-content/60">Amount due</p>
+            <p class="text-2xl font-semibold">$200.00</p>
+          </div>
+        </div>
+        <div class="modal-action">
+          <label for="payment-modal" class="btn btn-outline">Close</label>
+          <label for="payment-modal" class="btn btn-primary">Mark as Paid</label>
+        </div>
+      </div>
+      <label class="modal-backdrop" for="payment-modal">Close</label>
+    </div>
+
+    <input id="leave-plan-modal" type="checkbox" class="modal-toggle" />
+    <div class="modal" role="dialog">
+      <div class="modal-box">
+        <h3 class="text-lg font-semibold mb-3 text-error">Leave this plan?</h3>
+        <p class="text-sm text-base-content/70">
+          You will lose access to the itinerary and chat unless you are re-invited.
+        </p>
+        <div class="modal-action">
+          <label for="leave-plan-modal" class="btn btn-ghost">Cancel</label>
+          <button class="btn btn-error">Leave Plan</button>
+        </div>
+      </div>
+      <label class="modal-backdrop" for="leave-plan-modal">Close</label>
+    </div>
+
+    <input id="add-activity-modal" type="checkbox" class="modal-toggle" />
+    <div class="modal" role="dialog">
+      <div class="modal-box">
+        <h3 class="text-lg font-semibold mb-4">Add Activity</h3>
+        <div class="space-y-3">
+          <label class="form-control">
+            <span class="label-text">Activity name</span>
+            <input class="input input-bordered" placeholder="Arrival & Check-in" />
+          </label>
+          <label class="form-control">
+            <span class="label-text">Timeframe</span>
+            <div class="rounded-2xl border border-base-200 p-3">
+              <calendar-range months="1" page-by="single">
+                <calendar-month></calendar-month>
+              </calendar-range>
+            </div>
+          </label>
+          <div class="flex items-center justify-between rounded-2xl border border-base-200 px-4 py-3 text-sm">
+            <div>
+              <p class="font-semibold">All-day</p>
+              <p class="text-xs text-base-content/60">Hide start and end time.</p>
+            </div>
+            <input type="checkbox" class="toggle toggle-primary" bind:checked={isAllDay} />
+          </div>
+          {#if !isAllDay}
+            <div class="grid gap-3 md:grid-cols-2">
+              <label class="form-control">
+                <span class="label-text">Start time</span>
+                <input class="input input-bordered" type="time" bind:value={activityStartTime} />
+              </label>
+              <label class="form-control">
+                <span class="label-text">End time</span>
+                <input class="input input-bordered" type="time" bind:value={activityEndTime} />
+              </label>
+            </div>
+          {/if}
+          <label class="form-control">
+            <span class="label-text">Link</span>
+            <input class="input input-bordered" placeholder="https://maps.google.com" />
+          </label>
+          <label class="form-control">
+            <span class="label-text">Cost</span>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-base-content/60">
+                $
+              </span>
+              <input
+                class="input input-bordered w-full pl-7"
+                placeholder="0.00"
+                inputmode="decimal"
+                pattern="^\\d*(\\.\\d{0,2})?$"
+                min="0"
+                step="0.01"
+                bind:value={activityCost}
+                on:blur={formatCost}
+              />
+            </div>
+          </label>
+          <label class="form-control">
+            <span class="label-text">Details</span>
+            <textarea class="textarea textarea-bordered h-24" placeholder="Add activity details."></textarea>
+          </label>
+        </div>
+        <div class="modal-action">
+          <label for="add-activity-modal" class="btn btn-outline">Cancel</label>
+          <label for="add-activity-modal" class="btn btn-primary">Save Activity</label>
+        </div>
+      </div>
+      <label class="modal-backdrop" for="add-activity-modal">Close</label>
+    </div>
   </main>
 </div>

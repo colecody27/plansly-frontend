@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
   const planTypes = [
     { id: 'trip', label: 'Trip', description: 'Getaways & vacations' },
     { id: 'event', label: 'Event', description: 'Parties & meetups' },
@@ -6,6 +8,12 @@
   ];
 
   let selectedType = 'trip';
+  let allowBuyIn = true;
+  export let showBuyIn = false;
+
+  onMount(async () => {
+    await import('cally');
+  });
 </script>
 
 <div class="card bg-base-100 border border-base-200 shadow-sm">
@@ -54,32 +62,31 @@
           placeholder="Add details about the itinerary, what to bring, etc..."
         ></textarea>
       </label>
-      <div class="grid gap-4 md:grid-cols-3">
-        <label class="form-control">
-          <span class="label-text">Start Date</span>
-          <input class="input input-bordered" placeholder="Start Date" />
-        </label>
-        <label class="form-control">
-          <span class="label-text">End Date</span>
-          <input class="input input-bordered" placeholder="End Date" />
-        </label>
-        <label class="form-control">
-          <span class="label-text">Total Budget Target</span>
-          <input class="input input-bordered" placeholder="$0.00" />
-        </label>
-      </div>
-      <div class="flex items-center justify-between rounded-2xl border border-base-200 p-4">
-        <div>
-          <p class="font-semibold">Allow buy-in?</p>
-          <p class="text-sm text-base-content/60">Participants can chip in toward the total cost.</p>
+      <label class="form-control">
+        <span class="label-text">Dates</span>
+        <span class="text-xs text-base-content/60">Pick a start and end date.</span>
+        <div class="mt-3 rounded-2xl border border-base-200 p-3">
+          <calendar-range months="1" page-by="single">
+            <calendar-month></calendar-month>
+          </calendar-range>
         </div>
-        <input type="checkbox" class="toggle toggle-primary" checked />
-      </div>
+      </label>
+      {#if showBuyIn}
+        <div class="flex items-center justify-between rounded-2xl border border-base-200 p-4">
+          <div>
+            <p class="font-semibold">Allow buy-in?</p>
+            <p class="text-sm text-base-content/60">Participants can chip in toward the total cost.</p>
+          </div>
+          <input type="checkbox" class="toggle toggle-primary" bind:checked={allowBuyIn} />
+        </div>
+      {/if}
     </div>
 
     <div class="flex items-center justify-between">
       <button class="btn btn-outline">Back</button>
-      <button class="btn btn-primary">Continue -></button>
+      <a class="btn btn-primary" href={allowBuyIn ? '/plans/create/stripe' : '/dashboard'}>
+        Continue ->
+      </a>
     </div>
   </div>
 </div>

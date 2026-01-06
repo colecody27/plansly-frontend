@@ -1,3 +1,7 @@
+<script lang="ts">
+  import Avatar from '$lib/components/Avatar.svelte';
+</script>
+
 <section class="section-spacing px-6 lg:px-16">
   <div class="grid gap-12 lg:grid-cols-[1.1fr,0.9fr] items-center">
     <div class="space-y-6 fade-in-up">
@@ -33,11 +37,7 @@
             <span class="text-xs text-base-content/50">Live updates</span>
           </div>
           <div class="flex items-center gap-3">
-            <div class="avatar placeholder">
-              <div class="bg-primary/20 text-primary rounded-full w-10">
-                <span>JD</span>
-              </div>
-            </div>
+            <Avatar initials="JD" size="lg" status="online" innerClass="bg-primary/20 text-primary" />
             <div>
               <p class="font-semibold">John Doe</p>
               <p class="text-sm text-base-content/60">Sent $50 for pizza</p>

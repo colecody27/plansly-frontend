@@ -50,7 +50,7 @@
           <input type="text" class="grow" placeholder="Search plans by title or location" />
           <span class="text-base-content/40">Search</span>
         </label>
-        <button class="btn btn-outline">Create New Plan</button>
+        <button class="btn btn-primary">Create New Plan</button>
       </div>
     </div>
 

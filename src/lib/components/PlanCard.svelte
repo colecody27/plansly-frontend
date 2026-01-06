@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Plan } from '$lib/types';
+  import Avatar from '$lib/components/Avatar.svelte';
 
   export let plan: Plan;
 
@@ -30,8 +31,8 @@
 
     <div>
       <div class="flex items-center justify-between text-xs text-base-content/60 mb-2">
-        <span>${plan.raised.toLocaleString()} raised</span>
-        <span>${plan.goal.toLocaleString()} goal</span>
+        <span>${plan.raised.toLocaleString()} collected</span>
+        <span>${plan.goal.toLocaleString()} total cost</span>
       </div>
       <progress class="progress progress-primary" value={progressValue} max="100"></progress>
     </div>
@@ -51,19 +52,21 @@
       <div class="flex -space-x-2">
         {#each plan.participants as person, index}
           {#if index < 3}
-            <div class="avatar placeholder">
-              <div class="bg-base-200 rounded-full w-8">
-                <span class="text-xs">{person.name.slice(0, 1)}</span>
-              </div>
-            </div>
+            <Avatar
+              initials={person.name.slice(0, 1)}
+              size="sm"
+              status="online"
+              textClass="text-xs"
+            />
           {/if}
         {/each}
         {#if plan.participants.length > 3}
-          <div class="avatar placeholder">
-            <div class="bg-base-200 rounded-full w-8">
-              <span class="text-xs">+{plan.participants.length - 3}</span>
-            </div>
-          </div>
+          <Avatar
+            initials={`+${plan.participants.length - 3}`}
+            size="sm"
+            status="none"
+            textClass="text-xs"
+          />
         {/if}
       </div>
       <a class="text-sm font-semibold text-primary" href={`/plans/${plan.id}/organizer`}>Manage -></a>

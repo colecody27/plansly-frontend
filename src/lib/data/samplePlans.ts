@@ -64,14 +64,20 @@ export const samplePlanDetail: PlanDetail = {
       id: '1',
       title: 'Arrival & Airbnb Check-in',
       time: 'Fri, 6:00 PM',
+      timeframe: '6:00 PM - 8:00 PM',
       location: '2942 Sunset Road, Aspen',
+      link: 'https://maps.google.com',
+      cost: 0,
       status: 'Confirmed'
     },
     {
       id: '2',
       title: 'Morning Activity',
       time: 'Sat, 10:00 AM',
+      timeframe: '10:00 AM - 1:00 PM',
       location: 'Vote for your preference',
+      link: 'https://maps.google.com',
+      cost: 25,
       status: 'Voting Open',
       options: [
         {

@@ -35,37 +35,20 @@ module.exports = {
         }
       },
       {
-        mint: {
-          primary: '#00C2A8',
-          'primary-content': '#083B3D',
-          secondary: '#92D8FF',
-          accent: '#FFD07A',
-          neutral: '#1D2E2F',
-          'base-100': '#F3FBF9',
-          'base-200': '#E6F6F1',
-          'base-300': '#CCEDE4',
-          'base-content': '#132322',
-          info: '#3F8EFC',
-          success: '#00B57E',
-          warning: '#F9A826',
-          error: '#E4572E'
-        }
-      },
-      {
-        coastal: {
-          primary: '#1BD4C6',
-          'primary-content': '#0A3A38',
-          secondary: '#FFD6A5',
-          accent: '#6EE7FF',
-          neutral: '#1A2E35',
-          'base-100': '#F5FAFC',
-          'base-200': '#E8F3F8',
-          'base-300': '#D5E9F2',
-          'base-content': '#122026',
-          info: '#438DD5',
-          success: '#1DBF73',
-          warning: '#FFA552',
-          error: '#E45A5A'
+        'plannit-dark': {
+          primary: '#17E68E',
+          'primary-content': '#031F13',
+          secondary: '#2BD3B0',
+          accent: '#FFD48A',
+          neutral: '#0B1411',
+          'base-100': '#0B1411',
+          'base-200': '#0F1D18',
+          'base-300': '#162822',
+          'base-content': '#E6F6EF',
+          info: '#4D9DE0',
+          success: '#23C16B',
+          warning: '#FFB020',
+          error: '#E35B5B'
         }
       }
     ]

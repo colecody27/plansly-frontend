@@ -19,7 +19,10 @@ export interface Activity {
   id: string;
   title: string;
   time: string;
+  timeframe?: string;
   location: string;
+  link?: string;
+  cost?: number;
   status?: string;
   options?: ActivityOption[];
 }
