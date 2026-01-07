@@ -1,5 +1,6 @@
 <script lang="ts">
   import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+  import { getLoginUrl } from '$lib/api/auth';
 </script>
 
 <nav class="navbar px-6 lg:px-16 py-4">
@@ -18,6 +19,7 @@
   </div>
   <div class="navbar-end gap-3">
     <ThemeToggle />
-    <a class="btn btn-sm btn-primary" href="/signup">Login | Sign Up</a>
+    <a class="btn btn-sm btn-ghost" href={getLoginUrl()}>Login</a>
+    <a class="btn btn-sm btn-primary" href={getLoginUrl()}>Sign Up</a>
   </div>
 </nav>

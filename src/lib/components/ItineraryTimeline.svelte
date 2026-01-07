@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Activity } from '$lib/types';
+  import { formatActivityTime, formatTimeRange } from '$lib/models/plan';
 
   export let activities: Activity[] = [];
   export let addTargetId: string | null = null;
@@ -34,7 +35,7 @@
           <div class="flex items-center justify-between">
             <div>
               {#if !activity.options?.length}
-                <p class="text-xs text-base-content/60">{activity.time}</p>
+                <p class="text-xs text-base-content/60">{formatActivityTime(activity.startTime)}</p>
               {/if}
               <h4 class="text-base font-semibold">{activity.title}</h4>
               <p class="text-sm text-base-content/60">{activity.location}</p>
@@ -44,8 +45,10 @@
             {/if}
           </div>
           <div class="mt-3 flex flex-wrap gap-3 text-xs text-base-content/70">
-            {#if activity.timeframe}
-              <span class="badge badge-outline">{activity.timeframe}</span>
+            {#if formatTimeRange(activity.startTime, activity.endTime)}
+              <span class="badge badge-outline">
+                {formatTimeRange(activity.startTime, activity.endTime)}
+              </span>
             {/if}
             {#if activity.cost !== undefined}
               <span class="badge badge-outline">${activity.cost}</span>

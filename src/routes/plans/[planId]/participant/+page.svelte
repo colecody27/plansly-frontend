@@ -3,12 +3,16 @@
   import AppNav from '$lib/components/AppNav.svelte';
   import PlanHeader from '$lib/components/PlanHeader.svelte';
   import PlanStats from '$lib/components/PlanStats.svelte';
+  import Avatar from '$lib/components/Avatar.svelte';
   import ChatPanel from '$lib/components/ChatPanel.svelte';
   import ItineraryTimeline from '$lib/components/ItineraryTimeline.svelte';
   import ParticipantsCard from '$lib/components/ParticipantsCard.svelte';
   import { samplePlanDetail } from '$lib/data/samplePlans';
 
   const planLocked = true;
+  const venmoHandle = '@sarah-host';
+  const venmoLink = 'https://plannit.app/pay/placeholder';
+  let copiedVenmo = false;
   let activityCost = '';
   let isAllDay = false;
   let activityStartTime = '';
@@ -25,6 +29,18 @@
       return;
     }
     activityCost = parsed.toFixed(2);
+  };
+
+  const copyVenmoHandle = async () => {
+    try {
+      await navigator.clipboard.writeText(venmoHandle);
+    } catch (error) {
+      // Fallback to still show feedback even if clipboard is blocked.
+    }
+    copiedVenmo = true;
+    setTimeout(() => {
+      copiedVenmo = false;
+    }, 2000);
   };
 </script>
 
@@ -44,6 +60,26 @@
         extraActionClass="text-error"
         extraActionTargetId="leave-plan-modal"
       />
+      <div class="card bg-base-100 border border-base-200 shadow-sm">
+        <div class="card-body">
+          <div class="overflow-hidden rounded-2xl border border-base-200">
+            <img
+              class="h-48 w-full object-cover"
+              src="https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1200&q=80"
+              alt="Plan cover"
+            />
+          </div>
+          <div class="mt-4 flex items-center gap-3">
+            <Avatar initials="SN" size="lg" status="none" innerClass="bg-primary/15 text-primary" />
+            <div class="text-sm">
+              <p class="text-base-content/60">Hosted by</p>
+              <p class="font-semibold">Sarah Nguyen</p>
+            </div>
+          </div>
+          <h3 class="text-lg font-semibold mt-4">Plan Details</h3>
+          <p class="text-sm text-base-content/70">{samplePlanDetail.description}</p>
+        </div>
+      </div>
       {#if planLocked}
         <div class="card bg-base-100 border border-base-200 shadow-sm">
           <div class="card-body flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -80,13 +116,16 @@
           <div class="rounded-2xl border border-base-200 p-4">
             <p class="text-sm text-base-content/60">Organizer</p>
             <p class="font-semibold">Sarah Nguyen</p>
-            <p class="text-sm text-base-content/60">Venmo: @sarah-host</p>
+            <p class="text-sm text-base-content/60">Venmo: {venmoHandle}</p>
             <p class="text-sm text-base-content/60">
               Link:
-              <a class="link link-hover text-primary" href="https://plannit.app/pay/placeholder">
-                https://plannit.app/pay/placeholder
+              <a class="link link-hover text-primary" href={venmoLink}>
+                {venmoLink}
               </a>
             </p>
+            <button class="btn btn-xs btn-outline mt-3" on:click={copyVenmoHandle}>
+              {copiedVenmo ? 'Handle copied' : 'Copy Venmo handle'}
+            </button>
           </div>
           <div class="rounded-2xl border border-base-200 p-4">
             <p class="text-sm text-base-content/60">Amount due</p>

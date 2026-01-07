@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Plan } from '$lib/types';
+  import { formatShortDate } from '$lib/models/plan';
   import Avatar from '$lib/components/Avatar.svelte';
 
   export let plan: Plan;
@@ -22,7 +23,7 @@
       <div>
         <h3 class="text-lg font-semibold">{plan.title}</h3>
         <div class="text-sm text-base-content/60">
-          <p>{plan.dateRange}</p>
+          <p>{formatShortDate(plan.deadline)}</p>
           <p>{plan.location}</p>
         </div>
       </div>
@@ -44,7 +45,7 @@
       </div>
       <div class="rounded-xl border border-base-200 py-2">
         <p class="text-xs text-base-content/60">Due by</p>
-        <p class="font-semibold">{plan.dueBy}</p>
+        <p class="font-semibold">{formatShortDate(plan.deadline)}</p>
       </div>
     </div>
 

@@ -5,7 +5,6 @@
   import PlanCard from '$lib/components/PlanCard.svelte';
   import { samplePlans } from '$lib/data/samplePlans';
   import { getPlans } from '$lib/api/plans';
-  import { mapPlanFromApi } from '$lib/utils/plan';
   import type { Plan } from '$lib/types';
 
   let plans: Plan[] = samplePlans;
@@ -15,7 +14,7 @@
     try {
       const response = await getPlans();
       if (response.success && Array.isArray(response.data)) {
-        plans = response.data.map((plan, index) => mapPlanFromApi(plan, index));
+        plans = response.data;
       }
     } catch (error) {
       statusMessage = 'Using demo data until you connect the backend.';

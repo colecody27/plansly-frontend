@@ -53,9 +53,32 @@
         location="Joshua Tree, CA"
         inviteTargetId="invite-modal"
       />
+      <div class="card bg-base-100 border border-base-200 shadow-sm">
+        <div class="card-body">
+          <div class="overflow-hidden rounded-2xl border border-base-200">
+            <img
+              class="h-48 w-full object-cover"
+              src="https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1200&q=80"
+              alt="Plan cover"
+            />
+          </div>
+          <div class="mt-4 flex items-center gap-3">
+            <Avatar initials="SN" size="lg" status="none" innerClass="bg-primary/15 text-primary" />
+            <div class="text-sm">
+              <p class="text-base-content/60">Hosted by</p>
+              <p class="font-semibold">Sarah Nguyen</p>
+            </div>
+          </div>
+          <h3 class="text-lg font-semibold mt-4">Plan description</h3>
+          <p class="text-sm text-base-content/70">{samplePlanDetail.description}</p>
+        </div>
+      </div>
       {#if !venmoHandle}
         <div class="alert alert-warning">
-          Add your Venmo handle to enable faster buy-in payouts.
+          <span>
+            Add your Venmo handle to enable faster buy-in payouts.
+            <a class="link link-hover ml-1" href="/profile">Update profile</a>
+          </span>
         </div>
       {/if}
       <PlanStats budget={2400} collected={1200} perPerson={200} countdown="12 Days" />
@@ -193,12 +216,10 @@
 
     <input id="invite-modal" type="checkbox" class="modal-toggle" />
     <div class="modal" role="dialog">
-      <div class="modal-box">
-        <div class="flex items-center justify-between">
-          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <span class="text-xl">+</span>
-          </div>
-          <label for="invite-modal" class="btn btn-ghost btn-sm">✕</label>
+      <div class="modal-box text-center relative">
+        <label for="invite-modal" class="btn btn-ghost btn-sm absolute right-3 top-3">✕</label>
+        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <span class="text-xl">+</span>
         </div>
         <h3 class="text-lg font-semibold mt-4">Invite Friends</h3>
         <p class="text-sm text-base-content/70 mt-1">

@@ -18,9 +18,10 @@ export interface ActivityOption {
 export interface Activity {
   id: string;
   title: string;
-  time: string;
-  timeframe?: string;
+  startTime: Date | null;
+  endTime?: Date | null;
   location: string;
+  description?: string;
   link?: string;
   cost?: number;
   status?: string;
@@ -32,25 +33,27 @@ export interface Plan {
   title: string;
   type: PlanType;
   status: string;
-  dateRange: string;
+  deadline: Date | null;
   location: string;
   coverImage: string;
   goal: number;
   raised: number;
   perPerson: number;
-  dueBy: string;
   participants: Participant[];
+  createdAt?: Date | null;
 }
 
 export interface PlanDetail extends Plan {
   description: string;
   activities: Activity[];
   proposals: ActivityOption[];
-  chat: {
-    id: string;
-    name: string;
-    message: string;
-    time: string;
-    isSelf?: boolean;
-  }[];
+  chat: ChatMessage[];
+}
+
+export interface ChatMessage {
+  id: string;
+  name: string;
+  message: string;
+  timestamp: Date | null;
+  isSelf?: boolean;
 }

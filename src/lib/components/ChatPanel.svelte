@@ -1,5 +1,8 @@
 <script lang="ts">
-  export let messages: { id: string; name: string; message: string; time: string; isSelf?: boolean }[] = [];
+  import type { ChatMessage } from '$lib/types';
+  import { formatTime } from '$lib/models/plan';
+
+  export let messages: ChatMessage[] = [];
 </script>
 
 <div class="card bg-base-100 border border-base-200 shadow-sm">
@@ -11,7 +14,9 @@
     <div class="space-y-4 max-h-72 overflow-auto">
       {#each messages as message}
         <div class={`chat ${message.isSelf ? 'chat-end' : 'chat-start'}`}>
-          <div class="chat-header text-xs text-base-content/60">{message.name} - {message.time}</div>
+          <div class="chat-header text-xs text-base-content/60">
+            {message.name} - {formatTime(message.timestamp)}
+          </div>
           <div class={`chat-bubble ${message.isSelf ? 'chat-bubble-primary text-primary-content' : ''}`}>
             {message.message}
           </div>

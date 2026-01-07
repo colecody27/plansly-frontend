@@ -1,7 +1,6 @@
 import { browser } from '$app/environment';
-import { PUBLIC_API_BASE_URL } from '$env/static/public';
 
-const BASE_URL = PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const BASE_URL = '/api';
 
 const getToken = () => {
   if (!browser) {
