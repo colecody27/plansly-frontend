@@ -30,6 +30,7 @@ export interface Activity {
   isProposed?: boolean;
   hasVoted?: boolean;
   votes?: ActivityVote[];
+  proposerId?: string;
 }
 
 export interface ActivityVote {

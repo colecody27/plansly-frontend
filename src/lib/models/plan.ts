@@ -84,6 +84,7 @@ export const mapActivityFromApi = (activity: ApiActivity, index = 0): Activity =
   options: undefined,
   isProposed: activity.status?.toLowerCase() === 'proposed',
   hasVoted: Array.isArray(activity.votes) && activity.votes.length > 0,
+  proposerId: (activity as Record<string, any>).proposer_id ?? undefined,
   votes: Array.isArray(activity.votes)
     ? activity.votes
         .map((vote) => {
@@ -113,7 +114,7 @@ export const mapMessageFromApi = (message: ApiMessage, index = 0): ChatMessage =
 export const mapPlanFromApi = (plan: ApiPlan, index = 0): Plan => {
   const goal = plan.costs?.total ?? 0;
   const perPerson = plan.costs?.per_person ?? 0;
-  const raised = (plan as Record<string, any>)?.costs?.raised ?? Math.round(goal * 0.6);
+  const raised = (plan as Record<string, any>)?.costs?.raised ?? 0;
   const locationParts = [plan.city, plan.state, plan.country].filter(Boolean);
   const resolvedLocation =
     locationParts.length > 0 ? locationParts.join(', ') : plan.location ?? 'Location TBD';

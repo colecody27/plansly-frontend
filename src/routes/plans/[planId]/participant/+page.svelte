@@ -10,6 +10,7 @@
   import { samplePlanDetail } from '$lib/data/samplePlans';
   import { page } from '$app/stores';
   import { apiFetch } from '$lib/api/client';
+  import { invalidate } from '$app/navigation';
 
   const planLocked = true;
   const venmoHandle = '@sarah-host';
@@ -26,6 +27,7 @@
   let activityStartTime = '';
   let activityEndTime = '';
   let activityError = '';
+  let activityDateError = '';
   let isActivitySaving = false;
 
   onMount(async () => {
@@ -41,15 +43,59 @@
     activityCost = parsed.toFixed(2);
   };
 
-  const formatDate = (date: Date) => date.toISOString().slice(0, 10);
+  const formatCountdown = (start?: Date | null) => {
+    if (!start) {
+      return 'TBD';
+    }
+    const diffMs = start.getTime() - Date.now();
+    if (diffMs <= 0) {
+      return 'Started';
+    }
+    const minutes = Math.ceil(diffMs / 60000);
+    if (minutes < 60) {
+      return `${minutes} min`;
+    }
+    const hours = Math.ceil(diffMs / 3600000);
+    if (hours < 24) {
+      return `${hours} hr`;
+    }
+    const days = Math.ceil(diffMs / 86400000);
+    return `${days} day${days === 1 ? '' : 's'}`;
+  };
+
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const startOfDay = (value: Date) =>
+    new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  const parseLocalDate = (value: string) => {
+    const [year, month, day] = value.split('-').map(Number);
+    if (!year || !month || !day) {
+      return null;
+    }
+    return new Date(year, month - 1, day);
+  };
+  const normalizeCalendarDate = (value: Date) =>
+    new Date(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate());
+  const minSelectableDate = formatDate(new Date());
 
   const handleActivityRangeStart = (event: CustomEvent<Date>) => {
-    activityStartDay = formatDate(event.detail);
+    const today = startOfDay(new Date());
+    const selected = startOfDay(normalizeCalendarDate(event.detail));
+    if (selected < today) {
+      activityDateError = 'Start date cannot be in the past.';
+      return;
+    }
+    activityDateError = '';
+    activityStartDay = formatDate(selected);
     activityEndDay = '';
   };
 
   const handleActivityRangeEnd = (event: CustomEvent<Date>) => {
-    activityEndDay = formatDate(event.detail);
+    activityEndDay = formatDate(normalizeCalendarDate(event.detail));
   };
 
   const buildDateTime = (date: string, time: string) => {
@@ -78,6 +124,9 @@
       return;
     }
     activityError = '';
+    if (activityDateError) {
+      return;
+    }
 
     const trimmedName = activityName.trim();
     if (!trimmedName) {
@@ -89,6 +138,15 @@
     if (!planId) {
       activityError = 'Plan is unavailable.';
       return;
+    }
+    if (activityStartDay) {
+      const today = startOfDay(new Date());
+      const parsed = parseLocalDate(activityStartDay);
+      const selected = parsed ? startOfDay(parsed) : null;
+      if (selected && selected < today) {
+        activityDateError = 'Start date cannot be in the past.';
+        return;
+      }
     }
 
     isActivitySaving = true;
@@ -109,6 +167,7 @@
         })
       });
 
+      await invalidate(`/api/plan/${planId}`);
       addActivityOpen = false;
       resetActivityForm();
     } catch (error) {
@@ -178,7 +237,12 @@
           </div>
         </div>
       {/if}
-      <PlanStats budget={2400} collected={1200} perPerson={200} countdown="12 Days" />
+      <PlanStats
+        budget={2400}
+        collected={1200}
+        perPerson={200}
+        countdown={formatCountdown(samplePlanDetail.startDay ?? null)}
+      />
 
       <div class="grid gap-6 lg:grid-cols-[2fr,1fr]">
         <div class="space-y-6">
@@ -256,6 +320,7 @@
             <div class="rounded-2xl border border-base-200 p-3 flex justify-center">
               <calendar-range
                 months={1}
+                min={minSelectableDate}
                 page-by="single"
                 on:rangestart={handleActivityRangeStart}
                 on:rangeend={handleActivityRangeEnd}
@@ -263,6 +328,9 @@
                 <calendar-month></calendar-month>
               </calendar-range>
             </div>
+            {#if activityDateError}
+              <p class="text-xs text-error">{activityDateError}</p>
+            {/if}
           </label>
           <div class="grid gap-3 md:grid-cols-2">
             <label class="form-control">

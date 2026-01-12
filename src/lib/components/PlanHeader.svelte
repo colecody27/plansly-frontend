@@ -24,7 +24,10 @@
   </div>
   <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
     <div>
-      <h1 class="text-3xl lg:text-4xl font-semibold">{title}</h1>
+      <div class="flex flex-wrap items-center gap-2">
+        <h1 class="text-3xl lg:text-4xl font-semibold">{title}</h1>
+        <slot name="title-action" />
+      </div>
       {#if showMeta}
         <div class="flex flex-wrap gap-3 text-sm text-base-content/60 mt-2">
           <span>{dateRange}</span>
@@ -57,6 +60,7 @@
           <button class="btn btn-outline" on:click={onInvite ?? undefined}>Invite Friends</button>
         {/if}
       {/if}
+      <slot name="edit-action" />
       {#if showFinalize}
         <button class="btn btn-primary">Finalize Plan</button>
       {/if}

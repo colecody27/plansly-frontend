@@ -1,14 +1,122 @@
 <script lang="ts">
   import type { Activity } from '$lib/types';
-  import { formatActivityTime, formatTimeRange } from '$lib/models/plan';
+  import type { ApiActivity, ApiResponse } from '$lib/api/types';
+  import { formatActivityTime, formatTimeRange, mapActivityFromApi } from '$lib/models/plan';
   import { apiFetch } from '$lib/api/client';
   import { page } from '$app/stores';
+  import { invalidate } from '$app/navigation';
 
   const props = $props();
 
+  let activities = $state<Activity[]>(props.activities ?? []);
   let activityModalOpen = $state(false);
   let selectedActivity = $state<Activity | null>(null);
   let isVoteSubmitting = $state(false);
+
+  const getRange = (activity: Activity) => {
+    const start = activity.startTime ?? null;
+    const end = activity.endTime ?? activity.startTime ?? null;
+    return { start, end };
+  };
+
+  const rangesOverlap = (left: Activity, right: Activity) => {
+    const leftRange = getRange(left);
+    const rightRange = getRange(right);
+    if (!leftRange.start || !rightRange.start) {
+      return false;
+    }
+    const leftEnd = leftRange.end ?? leftRange.start;
+    const rightEnd = rightRange.end ?? rightRange.start;
+    return leftRange.start <= rightEnd && rightRange.start <= leftEnd;
+  };
+
+  const sortedActivities = $derived(
+    [...activities].sort((a, b) => {
+      const aTime = a.startTime?.getTime() ?? Number.POSITIVE_INFINITY;
+      const bTime = b.startTime?.getTime() ?? Number.POSITIVE_INFINITY;
+      if (aTime === bTime) {
+        return a.title.localeCompare(b.title);
+      }
+      return aTime - bTime;
+    })
+  );
+
+  const isApiResponse = (value: unknown): value is ApiResponse<ApiActivity> =>
+    Boolean(value && typeof value === 'object' && 'data' in value);
+
+  const isActivity = (value: unknown): value is Activity =>
+    Boolean(value && typeof value === 'object' && 'id' in value && 'title' in value);
+
+  const syncActivities = () => {
+    activities = props.activities ?? [];
+  };
+
+  $effect(syncActivities);
+
+  const updateActivity = (updated: Activity) => {
+    activities = activities.map((activity) =>
+      activity.id === updated.id ? updated : activity
+    );
+    if (selectedActivity?.id === updated.id) {
+      selectedActivity = updated;
+    }
+  };
+
+  const groupedActivities = $derived.by(() => {
+    const groups: Array<
+      | { type: 'single'; activity: Activity }
+      | { type: 'group'; activities: Activity[]; start: Date | null }
+    > = [];
+
+    for (const activity of sortedActivities) {
+      if (!activity.isProposed) {
+        groups.push({ type: 'single', activity });
+        continue;
+      }
+
+      const lastGroup = groups.at(-1);
+      if (
+        lastGroup?.type === 'group' &&
+        lastGroup.activities.length > 0 &&
+        rangesOverlap(lastGroup.activities[lastGroup.activities.length - 1], activity)
+      ) {
+        lastGroup.activities = [...lastGroup.activities, activity];
+        continue;
+      }
+
+      groups.push({
+        type: 'group',
+        activities: [activity],
+        start: activity.startTime ?? null
+      });
+    }
+
+    return groups;
+  });
+
+  const getGroupTotals = (group: Activity[]) => {
+    const counts = group.map((activity) => activity.votes?.length ?? 0);
+    const total = counts.reduce((sum, count) => sum + count, 0);
+    const max = counts.length ? Math.max(...counts) : 0;
+    return { total, max };
+  };
+
+  const getProposalClasses = (votes: number, total: number, maxVotes: number) => {
+    if (maxVotes > 0 && votes === maxVotes) {
+      return 'border-success/40 bg-success/10';
+    }
+    if (!total) {
+      return 'border-base-200 bg-base-100';
+    }
+    const ratio = votes / total;
+    if (ratio >= 0.6) {
+      return 'border-primary/40 bg-primary/15';
+    }
+    if (ratio >= 0.3) {
+      return 'border-primary/30 bg-primary/10';
+    }
+    return 'border-base-200 bg-base-100';
+  };
 
   const openActivityModal = (activity: Activity) => {
     selectedActivity = activity;
@@ -28,8 +136,8 @@
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
   };
 
-  const toggleVote = async () => {
-    if (!selectedActivity || isVoteSubmitting) {
+  const toggleVote = async (activity: Activity) => {
+    if (isVoteSubmitting) {
       return;
     }
     const planId = $page.params.planId;
@@ -39,15 +147,20 @@
 
     isVoteSubmitting = true;
     try {
-      await apiFetch(`/plan/${planId}/activity/${selectedActivity.id}/vote`, {
-        method: 'POST'
-      });
-      selectedActivity = {
-        ...selectedActivity,
-        hasVoted: !selectedActivity.hasVoted
-      };
+      const response = await apiFetch<ApiResponse<ApiActivity> | Activity>(
+        `/plan/${planId}/activity/${activity.id}/vote`,
+        { method: 'POST' }
+      );
+      const updatedActivity = isApiResponse(response)
+        ? mapActivityFromApi(response.data, 0)
+        : isActivity(response)
+          ? response
+          : null;
+      if (updatedActivity) {
+        updateActivity(updatedActivity);
+      }
+      await invalidate(`/api/plan/${planId}`);
     } catch (error) {
-      // TODO: Surface toast if needed.
     } finally {
       isVoteSubmitting = false;
     }
@@ -72,99 +185,166 @@
   </div>
 
   <div class="max-h-[520px] space-y-5 overflow-y-auto pr-2">
-    {#each props.activities as activity}
+    {#each groupedActivities as group}
       <div class="flex gap-4">
         <div class="flex flex-col items-center gap-2 pt-2">
           <div
             class={`h-4 w-4 rounded-full border-2 border-primary ${
-              activity.isProposed ? 'bg-transparent' : 'bg-primary'
+              group.type === 'group'
+                ? 'bg-transparent'
+                : group.activity.isProposed
+                  ? 'bg-transparent'
+                  : 'bg-primary'
             }`}
           ></div>
           <div class="flex-1 w-px bg-base-200"></div>
         </div>
         <div class="flex-1">
           <div class="mb-2 text-sm font-semibold text-base-content">
-            {activity.startTime
-              ? `${activity.startTime.toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric'
-                })} · ${activity.startTime.toLocaleTimeString('en-US', {
-                  hour: 'numeric',
-                  minute: '2-digit'
-                })}`
-              : 'Timeline TBD'}
+            {group.type === 'group'
+              ? group.start
+                ? `${group.start.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                  })}`
+                : 'Timeline TBD'
+              : group.activity.startTime
+                ? `${group.activity.startTime.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                  })} · ${group.activity.startTime.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit'
+                  })}`
+                : 'Timeline TBD'}
           </div>
-          <button
-            class="w-full rounded-2xl border border-base-200 bg-base-100 text-left shadow-sm transition hover:border-primary/40 hover:shadow-md"
-            type="button"
-            on:click={() => openActivityModal(activity)}
-          >
-            <div class="flex flex-col gap-4 p-4 md:flex-row md:items-center">
-              <div class="h-20 w-full overflow-hidden rounded-xl bg-base-200 md:h-16 md:w-24">
-                <img
-                  class="h-full w-full object-cover"
-                  src={activity.image ??
-                    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80'}
-                  alt={activity.title}
-                />
+
+          {#if group.type === 'group'}
+            {@const totals = getGroupTotals(group.activities)}
+            <div class="rounded-2xl border border-base-200 bg-base-100 p-5 shadow-sm space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-lg font-semibold">Voting Open</p>
+                  <p class="text-sm text-base-content/60">Vote for your preference</p>
+                </div>
+                <span class="badge badge-outline text-primary">Proposed</span>
               </div>
-              <div class="flex-1 space-y-2">
-                <div class="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <h4 class="text-base font-semibold">{activity.title}</h4>
-                    <p class="text-sm text-base-content/60">{activity.location}</p>
-                  </div>
-                  {#if activity.status}
-                    <div class="flex flex-col items-end">
-                      <span class="badge badge-outline text-primary">{activity.status}</span>
-                    </div>
-                  {/if}
-                </div>
-                <div class="flex flex-wrap items-center gap-3 text-xs text-base-content/70">
-                  {#if activity.cost !== undefined}
-                    <span class="badge badge-outline">${activity.cost}</span>
-                  {/if}
-                  {#if activity.isProposed}
+              <div class="space-y-3">
+                {#each group.activities as activity}
+                  {@const votes = activity.votes?.length ?? 0}
+                  <div
+                    class={`flex w-full flex-col gap-3 rounded-2xl border p-3 text-left shadow-sm transition md:flex-row md:items-center ${getProposalClasses(
+                      votes,
+                      totals.total,
+                      totals.max
+                    )}`}
+                  >
                     <button
-                      class={`btn btn-xs ml-auto ${
-                        activity.hasVoted
-                          ? 'btn-outline border-primary text-primary'
-                          : 'btn-primary'
-                      }`}
-                      on:click|stopPropagation={() => {
-                        selectedActivity = activity;
-                        toggleVote();
-                      }}
+                      class="flex flex-1 items-center gap-3 text-left"
                       type="button"
+                      on:click={() => openActivityModal(activity)}
                     >
-                      {activity.hasVoted ? "I'm out" : "I'm in!"}
+                      <div class="h-14 w-14 overflow-hidden rounded-xl bg-base-200">
+                        <img
+                          class="h-full w-full object-cover"
+                          src={activity.image ??
+                            'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80'}
+                          alt={activity.title}
+                        />
+                      </div>
+                      <div>
+                        <p class="text-base font-semibold">{activity.title}</p>
+                        <p class="text-sm text-base-content/60">{activity.location}</p>
+                      </div>
                     </button>
-                  {/if}
-                </div>
+                    <div class="ml-auto flex items-center gap-2">
+                      <button
+                        class={`btn btn-sm ${
+                          activity.hasVoted
+                            ? 'btn-outline border-primary text-primary'
+                            : 'btn-primary'
+                        }`}
+                        type="button"
+                        on:click|stopPropagation={() => toggleVote(activity)}
+                        disabled={isVoteSubmitting}
+                      >
+                        {activity.hasVoted ? "I'm out" : "I'm in"}
+                      </button>
+                    </div>
+                  </div>
+                {/each}
               </div>
             </div>
-            {#if activity.options}
-              <div class="border-t border-base-200 px-4 pb-4">
-                <div class="mt-4 space-y-3">
-                  {#each activity.options as option}
-                    <div class="flex items-center justify-between rounded-xl border border-base-200 p-3">
-                      <div class="flex items-center gap-3">
-                        {#if option.image}
-                          <img class="h-10 w-10 rounded-xl object-cover" src={option.image} alt={option.name} />
-                        {/if}
-                        <span class="font-semibold">{option.name}</span>
-                      </div>
-                      <div class="flex items-center gap-3">
-                        <span class="text-sm text-primary font-semibold">{option.votes} votes</span>
-                        <button class="btn btn-xs btn-outline">Vote</button>
-                      </div>
+          {:else}
+            <button
+              class="w-full rounded-2xl border border-base-200 bg-base-100 text-left shadow-sm transition hover:border-primary/40 hover:shadow-md"
+              type="button"
+              on:click={() => openActivityModal(group.activity)}
+            >
+              <div class="flex flex-col gap-4 p-4 md:flex-row md:items-center">
+                <div class="h-20 w-full overflow-hidden rounded-xl bg-base-200 md:h-16 md:w-24">
+                  <img
+                    class="h-full w-full object-cover"
+                    src={group.activity.image ??
+                      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80'}
+                    alt={group.activity.title}
+                  />
+                </div>
+                <div class="flex-1 space-y-2">
+                  <div class="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <h4 class="text-base font-semibold">{group.activity.title}</h4>
+                      <p class="text-sm text-base-content/60">{group.activity.location}</p>
                     </div>
-                  {/each}
+                    {#if group.activity.status}
+                      <div class="flex flex-col items-end">
+                        <span class="badge badge-outline text-primary">{group.activity.status}</span>
+                      </div>
+                    {/if}
+                  </div>
+                  <div class="flex flex-wrap items-center gap-3 text-xs text-base-content/70">
+                    {#if group.activity.cost !== undefined}
+                      <span class="badge badge-outline">${group.activity.cost}</span>
+                    {/if}
+                    {#if group.activity.isProposed}
+                      <button
+                        class={`btn btn-xs ml-auto ${
+                          group.activity.hasVoted
+                            ? 'btn-outline border-primary text-primary'
+                            : 'btn-primary'
+                        }`}
+                        on:click|stopPropagation={() => toggleVote(group.activity)}
+                        type="button"
+                      >
+                        {group.activity.hasVoted ? "I'm out" : "I'm in!"}
+                      </button>
+                    {/if}
+                  </div>
                 </div>
               </div>
-            {/if}
-          </button>
+              {#if group.activity.options}
+                <div class="border-t border-base-200 px-4 pb-4">
+                  <div class="mt-4 space-y-3">
+                    {#each group.activity.options as option}
+                      <div class="flex items-center justify-between rounded-xl border border-base-200 p-3">
+                        <div class="flex items-center gap-3">
+                          {#if option.image}
+                            <img class="h-10 w-10 rounded-xl object-cover" src={option.image} alt={option.name} />
+                          {/if}
+                          <span class="font-semibold">{option.name}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                          <button class="btn btn-xs btn-outline">Vote</button>
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+            </button>
+          {/if}
         </div>
       </div>
     {/each}
@@ -251,7 +431,7 @@
           {#if selectedActivity?.isProposed}
             <button
               class={`btn ${selectedActivity.hasVoted ? 'btn-outline border-primary text-primary' : 'btn-primary'}`}
-              on:click={toggleVote}
+              on:click={() => selectedActivity && toggleVote(selectedActivity)}
               disabled={isVoteSubmitting}
               type="button"
             >

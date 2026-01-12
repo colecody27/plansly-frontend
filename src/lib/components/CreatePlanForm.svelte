@@ -22,6 +22,7 @@
   let planState = '';
   let planCity = '';
   let errorMessage = '';
+  let dateError = '';
   let isSubmitting = false;
   export let showBuyIn = false;
 
@@ -29,15 +30,39 @@
     await import('cally');
   });
 
-  const formatDate = (date: Date) => date.toISOString().slice(0, 10);
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  const startOfDay = (value: Date) =>
+    new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  const parseLocalDate = (value: string) => {
+    const [year, month, day] = value.split('-').map(Number);
+    if (!year || !month || !day) {
+      return null;
+    }
+    return new Date(year, month - 1, day);
+  };
+  const normalizeCalendarDate = (value: Date) =>
+    new Date(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate());
+  const minSelectableDate = formatDate(new Date());
 
   const handleRangeStart = (event: CustomEvent<Date>) => {
-    startDay = formatDate(event.detail);
+    const today = startOfDay(new Date());
+    const selected = startOfDay(normalizeCalendarDate(event.detail));
+    if (selected < today) {
+      dateError = 'Start date cannot be in the past.';
+      return;
+    }
+    dateError = '';
+    startDay = formatDate(selected);
     endDay = '';
   };
 
   const handleRangeEnd = (event: CustomEvent<Date>) => {
-    endDay = formatDate(event.detail);
+    endDay = formatDate(normalizeCalendarDate(event.detail));
   };
 
   const handleSubmit = async () => {
@@ -46,6 +71,18 @@
     if (!trimmedName) {
       errorMessage = 'Plan name is required.';
       return;
+    }
+    if (dateError) {
+      return;
+    }
+    if (startDay) {
+      const today = startOfDay(new Date());
+      const parsed = parseLocalDate(startDay);
+      const selected = parsed ? startOfDay(parsed) : null;
+      if (selected && selected < today) {
+        dateError = 'Start date cannot be in the past.';
+        return;
+      }
     }
 
     isSubmitting = true;
@@ -136,6 +173,7 @@
         <div class="mt-3 rounded-2xl border border-base-200 p-3 flex justify-center">
           <calendar-range
             months={1}
+            min={minSelectableDate}
             page-by="single"
             on:rangestart={handleRangeStart}
             on:rangeend={handleRangeEnd}
@@ -143,6 +181,9 @@
             <calendar-month></calendar-month>
           </calendar-range>
         </div>
+        {#if dateError}
+          <p class="mt-2 text-xs text-error">{dateError}</p>
+        {/if}
       </label>
       <div class="grid gap-3 md:grid-cols-2">
         <label class="form-control">

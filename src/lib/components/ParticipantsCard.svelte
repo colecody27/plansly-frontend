@@ -23,7 +23,11 @@
       {#each participants as person}
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <Avatar initials={person.name.slice(0, 1)} status="online" />
+            <Avatar
+              initials={person.name.slice(0, 1)}
+              status="online"
+              imageUrl={person.avatar ?? null}
+            />
             <div>
               <p class="font-semibold text-sm">{person.name}</p>
               {#if person.status === 'organizer'}
