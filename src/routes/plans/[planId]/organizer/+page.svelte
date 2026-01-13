@@ -8,6 +8,7 @@
   import ParticipantsCard from '$lib/components/ParticipantsCard.svelte';
   import ChatPanel from '$lib/components/ChatPanel.svelte';
   import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
+  import type { Activity } from '$lib/types';
   import { formatShortDate } from '$lib/models/plan';
   import { apiFetch } from '$lib/api/client';
   import { invalidate } from '$app/navigation';
@@ -60,6 +61,7 @@
   let planCity = $state(props.data.plan?.city ?? '');
   let planStartDate = $state<Date | null>(props.data.plan?.startDay ?? null);
   let planEndDate = $state<Date | null>(props.data.plan?.endDay ?? null);
+  let itineraryTimeline: { openActivityModal: (activity: Activity) => void } | null = null;
   let rejectedCarousel: HTMLDivElement | null = null;
   let originalPlan = $state({
     title: planTitle,
@@ -87,6 +89,13 @@
       return formatShortDate(end);
     }
     return 'Timeline TBD';
+  };
+
+  const openRejectedActivity = (activity: Activity) => {
+    if (!hostId || activity.proposerId !== hostId || !itineraryTimeline) {
+      return;
+    }
+    itineraryTimeline.openActivityModal(activity);
   };
 
   const formatCountdown = (start?: Date | null) => {
@@ -635,6 +644,7 @@
               activities={props.data.plan.activities}
               addTargetId="add-activity-modal"
               emphasizeAdd={true}
+              bind:this={itineraryTimeline}
             />
           </div>
           <div class="space-y-6">
@@ -677,7 +687,22 @@
               bind:this={rejectedCarousel}
             >
               {#each rejectedActivities as activity}
-                <div class="card w-64 shrink-0 bg-base-100 border border-base-200 shadow-sm">
+                {@const canOpen = hostId && activity.proposerId === hostId}
+                <div
+                  class={`card w-64 shrink-0 bg-base-100 border border-base-200 shadow-sm ${
+                    canOpen ? 'cursor-pointer' : ''
+                  }`}
+                  role={canOpen ? 'button' : undefined}
+                  tabindex={canOpen ? 0 : undefined}
+                  on:click={() => openRejectedActivity(activity)}
+                  on:keydown={(event) => {
+                    if (!canOpen || (event.key !== 'Enter' && event.key !== ' ')) {
+                      return;
+                    }
+                    event.preventDefault();
+                    openRejectedActivity(activity);
+                  }}
+                >
                   <div class="h-24 w-full overflow-hidden rounded-t-2xl bg-base-200">
                     <img
                       class="h-full w-full object-cover"
@@ -697,6 +722,7 @@
                           class="btn btn-ghost btn-xs text-success"
                           type="button"
                           aria-label="Edit activity"
+                          on:click|stopPropagation={() => openRejectedActivity(activity)}
                         >
                           <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-8.5 8.5a1 1 0 0 1-.414.242l-4 1.333a1 1 0 0 1-1.263-1.263l1.333-4a1 1 0 0 1 .242-.414l8.5-8.5Z" />

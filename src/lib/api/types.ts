@@ -64,6 +64,9 @@ export interface ApiUserProfile {
   first_name?: string;
   last_name?: string;
   email?: string;
+  bio?: string;
+  hosting_count?: number;
+  participating_count?: number;
   country?: string;
   state?: string;
   city?: string;
@@ -71,4 +74,5 @@ export interface ApiUserProfile {
   avatar?: string;
   avatar_url?: string;
   venmo_handle?: string;
+  venmo?: string;
 }

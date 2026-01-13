@@ -219,6 +219,11 @@
       singleInputValue = '';
     }
   }
+
+  $: if (singleInput && location && location !== seededLocation) {
+    singleInputValue = location;
+    seededLocation = location;
+  }
 </script>
 
 <label class="form-control">

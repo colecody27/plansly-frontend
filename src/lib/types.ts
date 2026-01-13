@@ -83,6 +83,9 @@ export interface UserProfile {
   email?: string;
   avatar?: string;
   venmoHandle?: string;
+  bio?: string;
+  plansHosted?: number;
+  plansJoined?: number;
   location?: string;
   country?: string;
   state?: string;

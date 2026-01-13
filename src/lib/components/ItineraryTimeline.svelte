@@ -16,6 +16,7 @@
   let editActivity = $state(false);
   let isActivitySaving = $state(false);
   let activitySaveError = $state('');
+  let isReproposing = $state(false);
   let activityTitle = $state('');
   let activityLocation = $state('');
   let activityDescription = $state('');
@@ -134,16 +135,17 @@
     return 'border-base-200 bg-base-100';
   };
 
-  const openActivityModal = (activity: Activity) => {
+  export function openActivityModal(activity: Activity) {
     selectedActivity = activity;
     activityModalOpen = true;
-  };
+  }
 
   const closeActivityModal = () => {
     activityModalOpen = false;
     selectedActivity = null;
     editActivity = false;
     activitySaveError = '';
+    isReproposing = false;
   };
 
   const buildMapsLink = (value?: string | null) => {
@@ -240,12 +242,12 @@
 
   const isProposer = $derived(
     Boolean(
-      selectedActivity?.isProposed &&
-        selectedActivity?.proposerId &&
+      selectedActivity?.proposerId &&
         $page.data?.profile?.id &&
         selectedActivity.proposerId === $page.data.profile.id
     )
   );
+  const isRejected = $derived(selectedActivity?.status?.toLowerCase() === 'rejected');
 
   const saveActivity = async () => {
     if (!selectedActivity || isActivitySaving) {
@@ -324,6 +326,39 @@
       activitySaveError = error instanceof Error ? error.message : 'Unable to save activity.';
     } finally {
       isActivitySaving = false;
+    }
+  };
+
+  const reproposeActivity = async () => {
+    if (!selectedActivity || isReproposing) {
+      return;
+    }
+    const planId = $page.params.planId;
+    if (!planId) {
+      activitySaveError = 'Plan is unavailable.';
+      return;
+    }
+
+    isReproposing = true;
+    activitySaveError = '';
+    try {
+      const response = await apiFetch<ApiResponse<ApiActivity> | Activity>(
+        `/plan/${planId}/activity/${selectedActivity.id}`,
+        { method: 'PUT', body: JSON.stringify({ status: 'proposed' }) }
+      );
+      const updatedActivity = isApiResponse(response)
+        ? mapActivityFromApi(response.data, 0)
+        : isActivity(response)
+          ? response
+          : null;
+      if (updatedActivity) {
+        updateActivity(updatedActivity);
+      }
+      await invalidate(`/api/plan/${planId}`);
+    } catch (error) {
+      activitySaveError = error instanceof Error ? error.message : 'Unable to repropose activity.';
+    } finally {
+      isReproposing = false;
     }
   };
 
@@ -663,7 +698,7 @@
         {:else if selectedActivity?.cost !== undefined}
           <span class="badge badge-success">Est. ${selectedActivity.cost} / person</span>
         {/if}
-        {#if selectedActivity?.isProposed && isProposer}
+        {#if isProposer && (selectedActivity?.isProposed || isRejected)}
           <button
             class={`btn ${editActivity ? 'btn-primary' : 'btn-outline'}`}
             type="button"
@@ -796,69 +831,82 @@
       </div>
     </div>
     <div class="border-t border-base-200 p-5 space-y-4">
-      <div class="rounded-2xl bg-base-200/40 px-4 py-3 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div class="text-sm text-base-content/70">
-            Who’s in ({selectedActivity?.votes?.length ?? 0})
-          </div>
-          {#if selectedActivity?.isProposed}
-            <button
-              class={`btn ${selectedActivity.hasVoted ? 'btn-outline border-primary text-primary' : 'btn-primary'}`}
-              on:click={() => selectedActivity && toggleVote(selectedActivity)}
-              disabled={isVoteSubmitting}
-              type="button"
-            >
-              {selectedActivity.hasVoted ? "I'm out!" : "I'm in!"}
-            </button>
-          {:else}
-            <button class="btn btn-primary">Join Activity</button>
-          {/if}
-        </div>
-        <div class="flex gap-4 overflow-x-auto pb-2">
-          {#each (selectedActivity?.votes ?? []) as voter}
-            <div class="flex flex-col items-center text-xs text-base-content/70">
-              {#if voter.picture}
-                <img
-                  class="h-10 w-10 rounded-full object-cover"
-                  src={voter.picture}
-                  alt={voter.name}
-                />
-              {:else}
-                <div class="h-10 w-10 rounded-full bg-base-100 flex items-center justify-center text-sm font-semibold">
-                  {voter.name.slice(0, 1).toUpperCase()}
-                </div>
-              {/if}
-              <span class="mt-1">{voter.name}</span>
+      {#if !isRejected}
+        <div class="rounded-2xl bg-base-200/40 px-4 py-3 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="text-sm text-base-content/70">
+              Who’s in ({selectedActivity?.votes?.length ?? 0})
             </div>
-          {/each}
-          {#if !selectedActivity?.votes?.length}
-            <p class="text-xs text-base-content/50">No votes yet.</p>
-          {/if}
+            {#if selectedActivity?.isProposed}
+              <button
+                class={`btn ${selectedActivity.hasVoted ? 'btn-outline border-primary text-primary' : 'btn-primary'}`}
+                on:click={() => selectedActivity && toggleVote(selectedActivity)}
+                disabled={isVoteSubmitting}
+                type="button"
+              >
+                {selectedActivity.hasVoted ? "I'm out!" : "I'm in!"}
+              </button>
+            {:else}
+              <button class="btn btn-primary">Join Activity</button>
+            {/if}
+          </div>
+          <div class="flex gap-4 overflow-x-auto pb-2">
+            {#each (selectedActivity?.votes ?? []) as voter}
+              <div class="flex flex-col items-center text-xs text-base-content/70">
+                {#if voter.picture}
+                  <img
+                    class="h-10 w-10 rounded-full object-cover"
+                    src={voter.picture}
+                    alt={voter.name}
+                  />
+                {:else}
+                  <div class="h-10 w-10 rounded-full bg-base-100 flex items-center justify-center text-sm font-semibold">
+                    {voter.name.slice(0, 1).toUpperCase()}
+                  </div>
+                {/if}
+                <span class="mt-1">{voter.name}</span>
+              </div>
+            {/each}
+            {#if !selectedActivity?.votes?.length}
+              <p class="text-xs text-base-content/50">No votes yet.</p>
+            {/if}
+          </div>
         </div>
-      </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <button class="btn btn-outline flex-1">
-          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path d="M15 8a3 3 0 1 0-2.977-2.65l-3.4 1.7a3 3 0 1 0 0 6l3.4 1.7A3 3 0 1 0 15 12a2.96 2.96 0 0 0-.977.172l-3.4-1.7a2.99 2.99 0 0 0 0-1.944l3.4-1.7A2.96 2.96 0 0 0 15 8Z" />
-          </svg>
-          Share
-        </button>
-        <a
-          class="btn btn-outline flex-1"
-          href={buildMapsLink(selectedActivity?.location)}
-          target="_blank"
-          rel="noreferrer"
+      {/if}
+      {#if isRejected && isProposer}
+        <button
+          class="btn btn-primary w-full"
+          type="button"
+          on:click={reproposeActivity}
+          disabled={isReproposing}
         >
-          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path
-              fill-rule="evenodd"
-              d="M9.69 18.933a1 1 0 0 1-1.38 0C5.425 16.31 3 13.469 3 10.5A7 7 0 1 1 17 10.5c0 2.969-2.425 5.81-5.31 8.433ZM10 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          Open in Maps
-        </a>
-      </div>
+          {isReproposing ? 'Proposing...' : 'Propose'}
+        </button>
+      {:else if !isRejected}
+        <div class="flex flex-wrap items-center gap-3">
+          <button class="btn btn-outline flex-1">
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M15 8a3 3 0 1 0-2.977-2.65l-3.4 1.7a3 3 0 1 0 0 6l3.4 1.7A3 3 0 1 0 15 12a2.96 2.96 0 0 0-.977.172l-3.4-1.7a2.99 2.99 0 0 0 0-1.944l3.4-1.7A2.96 2.96 0 0 0 15 8Z" />
+            </svg>
+            Share
+          </button>
+          <a
+            class="btn btn-outline flex-1"
+            href={buildMapsLink(selectedActivity?.location)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                fill-rule="evenodd"
+                d="M9.69 18.933a1 1 0 0 1-1.38 0C5.425 16.31 3 13.469 3 10.5A7 7 0 1 1 17 10.5c0 2.969-2.425 5.81-5.31 8.433ZM10 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Open in Maps
+          </a>
+        </div>
+      {/if}
     </div>
   </div>
   <div class="modal-backdrop" role="presentation" on:click={closeActivityModal}></div>
