@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
-  import { createPlan } from '$lib/api/plans';
+  import { createPlan, requestPlanImageUpload, finalizePlanImageUpload } from '$lib/api/plans';
   import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
 
   const planTypes = [
@@ -28,7 +28,11 @@
   let isSubmitting = false;
   export let showBuyIn = false;
   let coverFilter = 'all';
-  let uploadedCoverUrl: string | null = null;
+  let uploadedCoverPreviewUrl: string | null = null;
+  let isUploadingCover = false;
+  let uploadError = '';
+  let coverUploadToken = 0;
+  let selectedCoverImageId: string | null = null;
   const coverGallery = [
     { id: 'c1', category: 'all', url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80' },
     { id: 'c2', category: 'nature', url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80' },
@@ -41,21 +45,121 @@
     { id: 'c9', category: 'minimal', url: 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=1200&q=80' }
   ];
   let selectedCover = coverGallery[0]?.url ?? '';
+  let selectedCoverValue = selectedCover;
+  $: selectedCoverDisplay = uploadedCoverPreviewUrl ?? selectedCover;
   $: filteredCovers = coverFilter === 'all'
     ? coverGallery
     : coverGallery.filter((cover) => cover.category === coverFilter);
 
-  const handleCoverUpload = (event: Event) => {
+  const selectCover = (url: string) => {
+    coverUploadToken += 1;
+    isUploadingCover = false;
+    uploadError = '';
+    selectedCoverImageId = null;
+    if (uploadedCoverPreviewUrl) {
+      URL.revokeObjectURL(uploadedCoverPreviewUrl);
+      uploadedCoverPreviewUrl = null;
+    }
+    selectedCover = url;
+    selectedCoverValue = url;
+  };
+
+  const handleCoverUpload = async (event: Event) => {
     const input = event.target as HTMLInputElement | null;
     const file = input?.files?.[0];
     if (!file) {
       return;
     }
-    if (uploadedCoverUrl) {
-      URL.revokeObjectURL(uploadedCoverUrl);
+    uploadError = '';
+    isUploadingCover = true;
+    const currentToken = ++coverUploadToken;
+
+    if (uploadedCoverPreviewUrl) {
+      URL.revokeObjectURL(uploadedCoverPreviewUrl);
     }
-    uploadedCoverUrl = URL.createObjectURL(file);
-    selectedCover = uploadedCoverUrl;
+    uploadedCoverPreviewUrl = URL.createObjectURL(file);
+    selectedCover = uploadedCoverPreviewUrl;
+
+    try {
+      const response = await requestPlanImageUpload({
+        filename: file.name,
+        filetype: file.type || 'application/octet-stream',
+        filesize: file.size
+      });
+
+      const data =
+        response && typeof response === 'object' && 'data' in response
+          ? response.data
+          : response;
+      if (!data) {
+        throw new Error('Upload request failed.');
+      }
+      const uploadUrl = typeof data === 'string'
+        ? data
+        : data.upload_url ??
+          data.uploadUrl ??
+          data.url ??
+          data.s3_url ??
+          data.s3Url;
+      const imageId = typeof data === 'string'
+        ? null
+        : data.image_id ?? data.imageId ?? null;
+
+      if (!uploadUrl) {
+        throw new Error('Unable to start image upload.');
+      }
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream'
+        },
+        body: file
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Image upload failed.');
+      }
+
+      if (imageId) {
+        try {
+          await finalizePlanImageUpload(imageId);
+        } catch (error) {
+          console.warn('Unable to finalize image upload', error);
+        }
+      }
+
+      const resolvedUrl = typeof data === 'string'
+        ? uploadUrl.split('?')[0]
+        : data.download_url ??
+          data.downloadUrl ??
+          data.selected ??
+          data.file_url ??
+          data.fileUrl ??
+          data.public_url ??
+          data.publicUrl ??
+          data.url ??
+          data.s3_url ??
+          data.s3Url ??
+          uploadUrl.split('?')[0];
+
+      if (currentToken !== coverUploadToken) {
+        return;
+      }
+
+      selectedCoverImageId = imageId;
+      selectedCover = resolvedUrl;
+      selectedCoverValue = resolvedUrl;
+    } catch (error) {
+      if (currentToken !== coverUploadToken) {
+        return;
+      }
+      uploadError = error instanceof Error ? error.message : 'Unable to upload image.';
+    } finally {
+      if (currentToken === coverUploadToken) {
+        isUploadingCover = false;
+      }
+    }
   };
 
   onMount(async () => {
@@ -73,8 +177,8 @@
     window.addEventListener('click', handleClickOutside);
     onDestroy(() => {
       window.removeEventListener('click', handleClickOutside);
-      if (uploadedCoverUrl) {
-        URL.revokeObjectURL(uploadedCoverUrl);
+      if (uploadedCoverPreviewUrl) {
+        URL.revokeObjectURL(uploadedCoverPreviewUrl);
       }
     });
   });
@@ -143,6 +247,10 @@
     if (dateError) {
       return;
     }
+    if (isUploadingCover) {
+      errorMessage = 'Please wait for the cover image upload to finish.';
+      return;
+    }
     if (planDeadline && startDay) {
       const parsedDeadline = parseLocalDate(planDeadline);
       const parsedStart = parseLocalDate(startDay);
@@ -185,7 +293,9 @@
         end_day: endDay ? new Date(endDay).toISOString() : undefined,
         country: planCountry || undefined,
         state: planState || undefined,
-        city: planCity || undefined
+        city: planCity || undefined,
+        cover_image: selectedCoverValue || undefined,
+        image_id: selectedCoverImageId || undefined
       });
       await goto(`/plans/${response.data.id}/organizer`);
     } catch (error) {
@@ -245,16 +355,25 @@
             <div class="rounded-2xl border border-base-200 overflow-hidden plan-glass">
               <img
                 class="h-44 w-full object-cover"
-                src={selectedCover}
+                src={selectedCoverDisplay}
                 alt="Selected cover"
               />
             </div>
             <label class="rounded-2xl border-2 border-dashed border-primary/40 bg-base-100/60 p-4 flex flex-col items-center justify-center gap-2 text-center cursor-pointer plan-glass">
               <span class="material-symbols-outlined text-2xl text-primary">cloud_upload</span>
-              <div class="text-sm font-semibold">Upload custom image</div>
+              <div class="text-sm font-semibold">
+                {#if isUploadingCover}
+                  Uploading...
+                {:else}
+                  Upload custom image
+                {/if}
+              </div>
               <div class="text-xs text-base-content/60">JPG, PNG, WebP up to 10MB</div>
-              <input class="hidden" type="file" accept="image/*" on:change={handleCoverUpload} />
+              <input class="hidden" type="file" accept="image/*" on:change={handleCoverUpload} disabled={isUploadingCover} />
             </label>
+            {#if uploadError}
+              <p class="text-xs text-error">{uploadError}</p>
+            {/if}
           </div>
           <div class="space-y-3">
             <div class="flex items-center justify-between">
@@ -278,7 +397,7 @@
                     selectedCover === cover.url ? 'border-primary ring-2 ring-primary/40' : 'border-base-200'
                   }`}
                   type="button"
-                  on:click={() => (selectedCover = cover.url)}
+                  on:click={() => selectCover(cover.url)}
                 >
                   <img class="h-20 w-full object-cover" src={cover.url} alt="Gallery cover" />
                   {#if selectedCover === cover.url}

@@ -10,7 +10,7 @@
         Organize plans with confidence and buy-in.
       </h1>
       <p class="text-base lg:text-lg text-base-content/70">
-        Plannit keeps trips, events, and group purchases moving with live collaboration, clear
+        iPlansly keeps trips, events, and group purchases moving with live collaboration, clear
         budgets, and instant RSVP clarity.
       </p>
       <div class="flex flex-col sm:flex-row gap-3">

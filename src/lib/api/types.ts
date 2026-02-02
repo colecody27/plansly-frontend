@@ -65,6 +65,18 @@ export interface ApiPlan {
   };
   location?: string;
   cover_image?: string;
+  image_url?: string;
+  imageUrl?: string;
+}
+
+export interface ApiPlanImageUrls {
+  selected?: string;
+  uploaded?: string[];
+}
+
+export interface ApiPlanWithImages {
+  plan: ApiPlan;
+  image_urls?: ApiPlanImageUrls;
 }
 
 export interface ApiResponse<T> {

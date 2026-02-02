@@ -22,7 +22,7 @@
     <section class="section-spacing max-w-xl space-y-6">
       <h1 class="text-3xl font-semibold">Connect your account</h1>
       <p class="text-base text-base-content/70">
-        Plannit uses Auth0 for secure login. Use the backend login button or paste a JWT token here for
+        iPlansly uses Auth0 for secure login. Use the backend login button or paste a JWT token here for
         local development.
       </p>
       <div class="card bg-base-100 border border-base-200 shadow-sm">

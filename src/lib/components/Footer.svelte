@@ -4,13 +4,13 @@
       <div class="h-8 w-8 rounded-xl bg-primary/20 text-primary flex items-center justify-center">
         <span class="text-sm font-bold">P</span>
       </div>
-      <span class="font-semibold text-base-content">Plannit</span>
+      <span class="font-semibold text-base-content">iPlansly</span>
     </div>
     <div class="flex gap-6">
       <a href="/support">Support</a>
       <a href="/privacy">Privacy Policy</a>
       <a href="/terms">Terms of Service</a>
     </div>
-    <span>(c) 2024 Plannit Inc. All rights reserved.</span>
+    <span>(c) 2024 iPlansly Inc. All rights reserved.</span>
   </div>
 </footer>

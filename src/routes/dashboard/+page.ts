@@ -19,7 +19,9 @@ export const load: PageLoad = async ({ fetch }) => {
 
     const payload = (await response.json()) as ApiResponse<ApiPlan[]>;
     if (payload.success && Array.isArray(payload.data)) {
-      plans = payload.data.map((plan, index) => mapPlanFromApi(plan, index));
+      plans = payload.data.map((plan, index) =>
+        mapPlanFromApi(plan, index, plan.image_url ?? plan.imageUrl)
+      );
     } else {
       statusMessage = 'No plans yet.';
     }

@@ -6,10 +6,8 @@
 <nav class="navbar px-6 lg:px-16 py-4">
   <div class="navbar-start gap-3">
     <a class="flex items-center gap-3" href="/">
-      <div class="h-10 w-10 rounded-2xl bg-primary/20 text-primary flex items-center justify-center">
-        <span class="text-lg font-bold">P</span>
-      </div>
-      <span class="text-lg font-semibold tracking-tight">Plannit</span>
+      <img class="h-12 w-12 rounded-2xl" src="/logo.png" alt="iPlansly logo" />
+      <span class="text-lg font-semibold tracking-tight">iPlansly</span>
     </a>
   </div>
   <div class="navbar-center hidden lg:flex gap-8 text-sm font-semibold">

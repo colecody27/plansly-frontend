@@ -325,7 +325,7 @@
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="font-semibold">Marketing Emails</p>
-                    <p class="text-xs text-base-content/60">Receive news and updates from Plannit.</p>
+                    <p class="text-xs text-base-content/60">Receive news and updates from iPlansly.</p>
                   </div>
                   <input type="checkbox" class="toggle" />
                 </div>

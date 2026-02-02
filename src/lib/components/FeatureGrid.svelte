@@ -3,7 +3,7 @@
     <p class="text-sm uppercase tracking-[0.2em] text-primary">Hosting made easy</p>
     <h2 class="text-3xl lg:text-4xl font-semibold">Everything you need to be the host with the most.</h2>
     <p class="text-base text-base-content/70">
-      From auto-generated invites to live budget tracking, Plannit helps you keep the energy high
+      From auto-generated invites to live budget tracking, iPlansly helps you keep the energy high
       and the logistics calm.
     </p>
   </div>

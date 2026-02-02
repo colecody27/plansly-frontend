@@ -165,7 +165,11 @@ export const mapMessageFromApi = (message: ApiMessage, index = 0): ChatMessage =
   isSelf: false
 });
 
-export const mapPlanFromApi = (plan: ApiPlan, index = 0): Plan => {
+export const mapPlanFromApi = (
+  plan: ApiPlan,
+  index = 0,
+  coverImageOverride?: string | null
+): Plan => {
   const goal = plan.costs?.total ?? 0;
   const perPerson = plan.costs?.per_person ?? 0;
   const raised = plan.costs?.collected ?? (plan as Record<string, any>)?.costs?.raised ?? 0;
@@ -202,7 +206,7 @@ export const mapPlanFromApi = (plan: ApiPlan, index = 0): Plan => {
     state: plan.state ?? undefined,
     city: plan.city ?? undefined,
     location: resolvedLocation,
-    coverImage: plan.cover_image ?? coverImages[index % coverImages.length],
+    coverImage: coverImageOverride || plan.cover_image || coverImages[index % coverImages.length],
     goal,
     raised,
     perPerson,
@@ -219,8 +223,12 @@ export const mapPlanFromApi = (plan: ApiPlan, index = 0): Plan => {
   };
 };
 
-export const mapPlanDetailFromApi = (plan: ApiPlan, index = 0): PlanDetail => ({
-  ...mapPlanFromApi(plan, index),
+export const mapPlanDetailFromApi = (
+  plan: ApiPlan,
+  index = 0,
+  coverImageOverride?: string | null
+): PlanDetail => ({
+  ...mapPlanFromApi(plan, index, coverImageOverride),
   description: plan.description ?? '',
   activities: Array.isArray(plan.activities)
     ? plan.activities.map((activity, activityIndex) => mapActivityFromApi(activity, activityIndex))

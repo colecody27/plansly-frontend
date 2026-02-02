@@ -28,14 +28,21 @@ const proxyRequest: RequestHandler = async ({ request, url, params, cookies }) =
   }
 
   const hasBody = !['GET', 'HEAD'].includes(request.method);
+  const contentType = headers.get('content-type') ?? '';
+  const shouldBufferBody = contentType.includes('application/json');
+  const requestBody = hasBody
+    ? shouldBufferBody
+      ? await request.text()
+      : request.body
+    : undefined;
 
   const response = await fetch(targetUrl, {
     method: request.method,
     headers,
-    body: hasBody ? request.body : undefined,
+    body: requestBody,
     redirect: 'manual',
     // Required for streaming request bodies in Node
-    duplex: hasBody ? 'half' : undefined
+    duplex: hasBody && !shouldBufferBody ? 'half' : undefined
   } as RequestInit);
 
   if (targetPath.startsWith('/auth/callback')) {
