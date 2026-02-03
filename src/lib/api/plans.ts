@@ -83,3 +83,9 @@ export const finalizePlanImageUpload = async (imageId: string) => {
     method: 'POST'
   });
 };
+
+export type PlanStockImages = Record<string, string[]>;
+
+export const getPlanStockImages = async () => {
+  return apiFetch<ApiResponse<PlanStockImages>>('/plan/stock/images');
+};

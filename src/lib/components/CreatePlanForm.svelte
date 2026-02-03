@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
-  import { createPlan, requestPlanImageUpload, finalizePlanImageUpload } from '$lib/api/plans';
+  import { createPlan, requestPlanImageUpload, finalizePlanImageUpload, getPlanStockImages } from '$lib/api/plans';
   import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
 
   const planTypes = [
@@ -27,13 +27,14 @@
   let dateError = '';
   let isSubmitting = false;
   export let showBuyIn = false;
-  let coverFilter = 'all';
+  let coverFilter = 'adventure';
   let uploadedCoverPreviewUrl: string | null = null;
   let isUploadingCover = false;
   let uploadError = '';
   let coverUploadToken = 0;
   let selectedCoverImageId: string | null = null;
-  const coverGallery = [
+  let selectedCoverImageKey: string | null = null;
+  let coverGallery = [
     { id: 'c1', category: 'all', url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80' },
     { id: 'c2', category: 'nature', url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80' },
     { id: 'c3', category: 'party', url: 'https://images.unsplash.com/photo-1464375117522-1311d6a5b81f?auto=format&fit=crop&w=1200&q=80' },
@@ -47,15 +48,27 @@
   let selectedCover = coverGallery[0]?.url ?? '';
   let selectedCoverValue = selectedCover;
   $: selectedCoverDisplay = uploadedCoverPreviewUrl ?? selectedCover;
-  $: filteredCovers = coverFilter === 'all'
-    ? coverGallery
-    : coverGallery.filter((cover) => cover.category === coverFilter);
+  $: coverCategories = Array.from(new Set(coverGallery.map((cover) => cover.category)));
+  $: coverFilter = coverFilter || coverCategories[0] || '';
+  $: filteredCovers = coverFilter
+    ? coverGallery.filter((cover) => cover.category === coverFilter)
+    : coverGallery;
+
+  const extractS3Key = (url: string) => {
+    const marker = 'stock/';
+    const index = url.indexOf(marker);
+    if (index === -1) {
+      return null;
+    }
+    return url.slice(index + marker.length);
+  };
 
   const selectCover = (url: string) => {
     coverUploadToken += 1;
     isUploadingCover = false;
     uploadError = '';
     selectedCoverImageId = null;
+    selectedCoverImageKey = extractS3Key(url);
     if (uploadedCoverPreviewUrl) {
       URL.revokeObjectURL(uploadedCoverPreviewUrl);
       uploadedCoverPreviewUrl = null;
@@ -148,6 +161,7 @@
       }
 
       selectedCoverImageId = imageId;
+      selectedCoverImageKey = null;
       selectedCover = resolvedUrl;
       selectedCoverValue = resolvedUrl;
     } catch (error) {
@@ -164,6 +178,39 @@
 
   onMount(async () => {
     await import('cally');
+    const fallbackCover = coverGallery[0]?.url ?? '';
+    try {
+      const response = await getPlanStockImages();
+      const data =
+        response && typeof response === 'object' && 'data' in response
+          ? response.data
+          : response;
+      if (data && typeof data === 'object') {
+        const nextGallery = Object.entries(data).flatMap(([category, urls]) =>
+          (Array.isArray(urls) ? urls : []).map((url, index) => ({
+            id: `${category}-${index}`,
+            category,
+            url
+          }))
+        );
+        if (nextGallery.length > 0) {
+          coverGallery = nextGallery;
+          const adventureCover = nextGallery.find((cover) => cover.category === 'adventure');
+          if (adventureCover) {
+            coverFilter = 'adventure';
+            selectedCover = adventureCover.url;
+            selectedCoverValue = adventureCover.url;
+            selectedCoverImageKey = extractS3Key(adventureCover.url);
+          } else if (selectedCoverValue === fallbackCover) {
+            selectedCover = nextGallery[0].url;
+            selectedCoverValue = nextGallery[0].url;
+            selectedCoverImageKey = extractS3Key(nextGallery[0].url);
+          }
+        }
+      }
+    } catch (error) {
+      // Keep fallback stock images if the request fails.
+    }
     const handleClickOutside = (event: MouseEvent) => {
       if (!deadlineOpen || !deadlineContainer) {
         return;
@@ -175,12 +222,12 @@
       deadlineOpen = false;
     };
     window.addEventListener('click', handleClickOutside);
-    onDestroy(() => {
+    return () => {
       window.removeEventListener('click', handleClickOutside);
       if (uploadedCoverPreviewUrl) {
         URL.revokeObjectURL(uploadedCoverPreviewUrl);
       }
-    });
+    };
   });
 
   const formatDate = (date: Date) => {
@@ -294,8 +341,8 @@
         country: planCountry || undefined,
         state: planState || undefined,
         city: planCity || undefined,
-        cover_image: selectedCoverValue || undefined,
-        image_id: selectedCoverImageId || undefined
+        image_id: selectedCoverImageId || undefined,
+        image_key: selectedCoverImageId ? undefined : selectedCoverImageKey || undefined
       });
       await goto(`/plans/${response.data.id}/organizer`);
     } catch (error) {
@@ -380,7 +427,7 @@
               <span class="text-xs font-semibold uppercase tracking-widest text-base-content/60">Browse gallery</span>
             </div>
             <div class="flex flex-wrap gap-2">
-              {#each ['all', 'nature', 'party', 'city', 'minimal'] as filter}
+              {#each coverCategories as filter}
                 <button
                   class={`btn btn-xs ${coverFilter === filter ? 'btn-primary' : 'btn-outline'}`}
                   type="button"
@@ -399,7 +446,13 @@
                   type="button"
                   on:click={() => selectCover(cover.url)}
                 >
-                  <img class="h-20 w-full object-cover" src={cover.url} alt="Gallery cover" />
+                  <img
+                    class="h-20 w-full object-cover"
+                    src={cover.url}
+                    alt="Gallery cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
                   {#if selectedCover === cover.url}
                     <span class="absolute right-2 top-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-content">
                       <span class="material-symbols-outlined text-xs">check</span>
