@@ -1,11 +1,10 @@
-import { PUBLIC_API_BASE_URL } from '$env/static/public';
-import { PRIVATE_API_BASE_URL } from '$env/static/private';
+import { env as publicEnv } from '$env/dynamic/public';
 import type { RequestHandler } from '@sveltejs/kit';
 
 const normalizeBackendUrl = (value: string) =>
   value.replace(/localhost/g, '127.0.0.1').replace(/\/+$/, '');
 const BACKEND_BASE_URL = normalizeBackendUrl(
-  PRIVATE_API_BASE_URL || PUBLIC_API_BASE_URL || 'http://127.0.0.1:5001'
+  publicEnv.PUBLIC_BACKEND_URL || 'http://127.0.0.1:5001'
 );
 
 const proxyRequest: RequestHandler = async ({ request, url, params, cookies }) => {

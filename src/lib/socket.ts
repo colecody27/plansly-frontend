@@ -1,12 +1,13 @@
 import { browser } from '$app/environment';
-import { PUBLIC_API_BASE_URL } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 import { io, type Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
 
 const normalizeBackendUrl = (value: string) =>
   value.replace(/localhost/g, '127.0.0.1').replace(/\/+$/, '');
-const getSocketUrl = () => normalizeBackendUrl(PUBLIC_API_BASE_URL || 'http://127.0.0.1:5001');
+const getSocketUrl = () =>
+  normalizeBackendUrl(env.PUBLIC_BACKEND_URL || 'http://127.0.0.1:5001');
 
 export const connectSocket = () => {
   if (!browser) {

@@ -1,9 +1,11 @@
 import { browser } from '$app/environment';
-import { PRIVATE_API_BASE_URL } from '$env/static/private';
+import { env } from '$env/dynamic/public';
 
 const normalizeBackendUrl = (value: string) =>
   value.replace(/localhost/g, '127.0.0.1').replace(/\/+$/, '');
-const BACKEND_BASE_URL = normalizeBackendUrl(PRIVATE_API_BASE_URL || 'http://127.0.0.1:5001');
+const BACKEND_BASE_URL = normalizeBackendUrl(
+  env.PUBLIC_BACKEND_URL || 'http://127.0.0.1:5001'
+);
 
 export const getLoginUrl = (redirectTo?: string) => {
   if (browser) {
