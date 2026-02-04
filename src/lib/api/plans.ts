@@ -78,9 +78,13 @@ export const requestPlanImageUpload = async (payload: PlanImageUploadRequest) =>
   });
 };
 
-export const finalizePlanImageUpload = async (imageId: string) => {
+export const finalizePlanImageUpload = async (
+  imageId: string,
+  payload?: { plan_id?: string }
+) => {
   return apiFetch<ApiResponse<PlanImageUploadResponse>>(`/plan/upload/image/${imageId}`, {
-    method: 'POST'
+    method: 'POST',
+    body: payload ? JSON.stringify(payload) : undefined
   });
 };
 

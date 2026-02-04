@@ -3,6 +3,7 @@
   import AppNav from '$lib/components/AppNav.svelte';
   import Avatar from '$lib/components/Avatar.svelte';
   import PlanHeader from '$lib/components/PlanHeader.svelte';
+  import CoverImageModal from '$lib/components/CoverImageModal.svelte';
   import PlanStats from '$lib/components/PlanStats.svelte';
   import ItineraryTimeline from '$lib/components/ItineraryTimeline.svelte';
   import ParticipantsCard from '$lib/components/ParticipantsCard.svelte';
@@ -14,6 +15,7 @@
   import type { Activity } from '$lib/types';
   import { formatShortDate } from '$lib/models/plan';
   import { apiFetch } from '$lib/api/client';
+  import { finalizePlanImageUpload } from '$lib/api/plans';
   import { invalidate } from '$app/navigation';
   import { browser } from '$app/environment';
 
@@ -48,6 +50,7 @@
   let isPlanLocking = $state(false);
   let planSaveError = $state('');
   let planLockError = $state('');
+  let coverSaveError = $state('');
   let planDateError = $state('');
   let planTitle = $state(props.data.plan?.title ?? '');
   let planDescription = $state(props.data.plan?.description ?? '');
@@ -57,6 +60,13 @@
   let planCity = $state(props.data.plan?.city ?? '');
   let planStartDate = $state<Date | null>(props.data.plan?.startDay ?? null);
   let planEndDate = $state<Date | null>(props.data.plan?.endDay ?? null);
+  let coverImage = $state(props.data.plan?.coverImage ?? '');
+  let coverModalOpen = $state(false);
+  $effect(() => {
+    if (!coverModalOpen && props.data.plan?.coverImage) {
+      coverImage = props.data.plan.coverImage;
+    }
+  });
   let itineraryTimeline: { openActivityModal: (activity: Activity) => void } | null = null;
   let rejectedCarousel: HTMLDivElement | null = null;
   let activities = $state(props.data.plan?.activities ?? []);
@@ -79,6 +89,35 @@
     startDay: planStartDate,
     endDay: planEndDate
   });
+
+  const saveCoverImage = async (detail: { imageId?: string; imageKey?: string; previewUrl?: string }) => {
+    const planId = props.data.plan?.id;
+    if (!planId) {
+      coverSaveError = 'Plan is unavailable.';
+      return;
+    }
+    coverSaveError = '';
+    try {
+      if (detail.imageId) {
+        await finalizePlanImageUpload(detail.imageId, { plan_id: planId });
+      } else if (detail.imageKey) {
+        await apiFetch(`/plan/${planId}/update`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            image_key: detail.imageKey
+          })
+        });
+      } else {
+        coverSaveError = 'Select an image before saving.';
+        return;
+      }
+      coverImage = detail.previewUrl || coverImage;
+      coverModalOpen = false;
+      await invalidate(`/api/plan/${planId}`);
+    } catch (error) {
+      coverSaveError = error instanceof Error ? error.message : 'Unable to update cover.';
+    }
+  };
 
   const formatTimeline = () => {
     const start = planStartDate ?? null;
@@ -692,16 +731,23 @@
             <div class="group relative overflow-hidden rounded-2xl border border-base-200">
               <img
                 class="h-48 w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                src={props.data.plan.coverImage}
+                src={coverImage || props.data.plan.coverImage}
                 alt="Plan cover"
               />
               <div class="cover-overlay absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <button class="btn btn-sm cover-change-btn shadow-lg" type="button">
+                <button
+                  class="btn btn-sm cover-change-btn shadow-lg"
+                  type="button"
+                  on:click={() => (coverModalOpen = true)}
+                >
                   <span class="material-symbols-outlined text-lg">add_a_photo</span>
                   Change cover
                 </button>
               </div>
             </div>
+            {#if coverSaveError}
+              <div class="alert alert-error text-sm mt-3">{coverSaveError}</div>
+            {/if}
             <div class="mt-4 flex items-center gap-3">
               <Avatar
                 initials={hostInitials}
@@ -1055,6 +1101,14 @@
     </div>
   </div>
 </div>
+
+<CoverImageModal
+  bind:open={coverModalOpen}
+  title="Update plan cover"
+  currentImage={coverImage || props.data.plan?.coverImage || null}
+  on:close={() => (coverModalOpen = false)}
+  on:save={(event) => saveCoverImage(event.detail)}
+/>
 
 <style>
   :global(.people-carousel-root .people-carousel) {

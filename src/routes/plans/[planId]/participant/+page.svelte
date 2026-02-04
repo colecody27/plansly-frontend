@@ -32,6 +32,7 @@
   let inviteStatus = $state('');
   let isInviteLoading = $state(false);
   let copiedInvite = $state(false);
+  let coverImage = $state(plan?.coverImage ?? '');
 
   const host =
     plan?.organizer ??
@@ -55,6 +56,12 @@
   const descriptionShort = descriptionText.length > 180
     ? `${descriptionText.slice(0, 180).trim()}...`
     : descriptionText;
+
+  $effect(() => {
+    if (plan?.coverImage) {
+      coverImage = plan.coverImage;
+    }
+  });
 
   const buildInviteLink = (rawLink: string, planId: string, inviteId: string) => {
     const origin = browser ? window.location.origin : '';
@@ -471,15 +478,10 @@
               <div class="group relative overflow-hidden rounded-2xl border border-base-200">
                 <img
                   class="h-48 w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  src={plan.coverImage}
+                  src={coverImage || plan.coverImage}
                   alt={plan.title}
                 />
-                <div class="cover-overlay absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                  <button class="btn btn-sm cover-change-btn shadow-lg" type="button">
-                    <span class="material-symbols-outlined text-lg">add_a_photo</span>
-                    Change cover
-                  </button>
-                </div>
+                <div class="cover-overlay absolute inset-0"></div>
               </div>
               <div class="mt-4 flex items-center gap-3">
                 <Avatar
