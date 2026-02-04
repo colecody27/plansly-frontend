@@ -3,7 +3,7 @@
   import type { ApiActivity, ApiPlan, ApiResponse } from '$lib/api/types';
   import type { PlanDetail } from '$lib/types';
   import { formatActivityTime, formatTimeRange, mapActivityFromApi, mapPlanDetailFromApi } from '$lib/models/plan';
-  import { apiFetch } from '$lib/api/client';
+  import { apiFetch, getBackendBaseUrl } from '$lib/api/client';
   import { page } from '$app/stores';
   import { invalidate } from '$app/navigation';
   import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
@@ -371,7 +371,7 @@
       if (updatedActivity) {
         updateActivity(updatedActivity);
       }
-      await invalidate(`/api/plan/${planId}`);
+      await invalidate(`${getBackendBaseUrl()}/plan/${planId}`);
       editActivity = false;
     } catch (error) {
       activitySaveError = error instanceof Error ? error.message : 'Unable to save activity.';
@@ -405,7 +405,7 @@
       if (updatedActivity) {
         updateActivity(updatedActivity);
       }
-      await invalidate(`/api/plan/${planId}`);
+      await invalidate(`${getBackendBaseUrl()}/plan/${planId}`);
     } catch (error) {
       activitySaveError = error instanceof Error ? error.message : 'Unable to repropose activity.';
     } finally {

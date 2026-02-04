@@ -1,5 +1,6 @@
 import type { PageLoad } from './$types';
 import type { ApiPlan, ApiResponse } from '$lib/api/types';
+import { getBackendBaseUrl } from '$lib/api/client';
 import type { Plan } from '$lib/types';
 import { mapPlanFromApi } from '$lib/models/plan';
 
@@ -9,7 +10,9 @@ export const load: PageLoad = async ({ fetch, params }) => {
   let statusMessage = '';
 
   try {
-    const response = await fetch(`/api/plan/${planId}/invite/${inviteId}`);
+    const response = await fetch(`${getBackendBaseUrl()}/plan/${planId}/invite/${inviteId}`, {
+      credentials: 'include'
+    });
     if (!response.ok) {
       throw new Error('Unable to load plan invitation.');
     }

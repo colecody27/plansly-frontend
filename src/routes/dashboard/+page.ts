@@ -3,13 +3,16 @@ import { redirect, isRedirect } from '@sveltejs/kit';
 import type { ApiPlan, ApiResponse } from '$lib/api/types';
 import type { Plan } from '$lib/types';
 import { mapPlanFromApi } from '$lib/models/plan';
+import { getBackendBaseUrl } from '$lib/api/client';
 
 export const load: PageLoad = async ({ fetch }) => {
   let plans: Plan[] = [];
   let statusMessage = '';
 
   try {
-    const response = await fetch('/api/plan');
+    const response = await fetch(`${getBackendBaseUrl()}/plan`, {
+      credentials: 'include'
+    });
     if (response.status === 401 || response.status === 303) {
       throw redirect(303, '/');
     }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, createEventDispatcher } from 'svelte';
-  import { apiFetch } from '$lib/api/client';
+  import { apiFetch, getBackendBaseUrl } from '$lib/api/client';
   import { invalidate } from '$app/navigation';
   import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
   import type { Activity } from '$lib/types';
@@ -211,7 +211,7 @@
       if (modalInput) {
         modalInput.checked = false;
       }
-      await invalidate(`/api/plan/${planId}`);
+      await invalidate(`${getBackendBaseUrl()}/plan/${planId}`);
       resetActivityForm();
     } catch (error) {
       activityError = error instanceof Error ? error.message : 'Unable to save activity.';

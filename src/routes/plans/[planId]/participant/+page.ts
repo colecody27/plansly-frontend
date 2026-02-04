@@ -3,6 +3,7 @@ import { redirect, isRedirect } from '@sveltejs/kit';
 import type { ApiPlan, ApiPlanWithImages, ApiResponse } from '$lib/api/types';
 import type { PlanDetail } from '$lib/types';
 import { mapPlanDetailFromApi } from '$lib/models/plan';
+import { getBackendBaseUrl } from '$lib/api/client';
 
 export const load: PageLoad = async ({ fetch, params }) => {
   const { planId } = params;
@@ -10,7 +11,9 @@ export const load: PageLoad = async ({ fetch, params }) => {
   let statusMessage = '';
 
   try {
-    const response = await fetch(`/api/plan/${planId}`);
+    const response = await fetch(`${getBackendBaseUrl()}/plan/${planId}`, {
+      credentials: 'include'
+    });
     console.log('Participant plan load status', response.status);
     if (response.status === 401 || response.status === 303) {
       throw redirect(303, '/');

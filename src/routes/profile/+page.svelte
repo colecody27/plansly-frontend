@@ -4,7 +4,7 @@
   import AppNav from '$lib/components/AppNav.svelte';
   import Avatar from '$lib/components/Avatar.svelte';
   import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
-  import { apiFetch } from '$lib/api/client';
+  import { apiFetch, getBackendBaseUrl } from '$lib/api/client';
 
   const sidebarItems = [
     { label: 'Personal Information', active: true },
@@ -100,10 +100,11 @@
           headers.set('Authorization', `Bearer ${token}`);
         }
 
-        const response = await fetch('/api/user/profile', {
+        const response = await fetch(`${getBackendBaseUrl()}/user/profile`, {
           method: 'PUT',
           headers,
-          body: form
+          body: form,
+          credentials: 'include'
         });
 
         if (!response.ok) {

@@ -12,7 +12,7 @@
   import { formatShortDate } from '$lib/models/plan';
   import { onDestroy, onMount } from 'svelte';
   import { joinPlan, leavePlan, onAnnouncement, onMessage, onUsers, sendMessage } from '$lib/socket';
-  import { apiFetch } from '$lib/api/client';
+  import { apiFetch, getBackendBaseUrl } from '$lib/api/client';
   import { invalidate } from '$app/navigation';
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
@@ -448,7 +448,7 @@
         if (paymentModal) {
           paymentModal.checked = false;
         }
-        invalidate(`/api/plan/${plan.id}`);
+        invalidate(`${getBackendBaseUrl()}/plan/${plan.id}`);
       }, 1500);
     } catch (error) {
       // TODO: surface error if needed

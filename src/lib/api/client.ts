@@ -1,6 +1,11 @@
 import { browser } from '$app/environment';
+import { env } from '$env/dynamic/public';
 
-const BASE_URL = '/api';
+const normalizeBackendUrl = (value: string) =>
+  value.replace(/localhost/g, '127.0.0.1').replace(/\/+$/, '');
+const BASE_URL = normalizeBackendUrl(env.PUBLIC_BACKEND_URL || 'http://127.0.0.1:5001');
+
+export const getBackendBaseUrl = () => BASE_URL;
 
 const getToken = () => {
   if (!browser) {
@@ -13,6 +18,9 @@ export const apiFetch = async <T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> => {
+  if (import.meta.env.DEV && path.startsWith('/api')) {
+    throw new Error('Do not use /api proxy paths; call the backend directly.');
+  }
   const token = getToken();
   const headers = new Headers(options.headers ?? {});
   headers.set('Content-Type', 'application/json');
@@ -22,7 +30,8 @@ export const apiFetch = async <T>(
 
   const response = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    headers
+    headers,
+    credentials: 'include'
   });
 
   if (response.status === 401 && browser) {

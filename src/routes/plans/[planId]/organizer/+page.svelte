@@ -14,7 +14,7 @@
   import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
   import type { Activity } from '$lib/types';
   import { formatShortDate } from '$lib/models/plan';
-  import { apiFetch } from '$lib/api/client';
+  import { apiFetch, getBackendBaseUrl } from '$lib/api/client';
   import { finalizePlanImageUpload } from '$lib/api/plans';
   import { invalidate } from '$app/navigation';
   import { browser } from '$app/environment';
@@ -113,7 +113,7 @@
       }
       coverImage = detail.previewUrl || coverImage;
       coverModalOpen = false;
-      await invalidate(`/api/plan/${planId}`);
+      await invalidate(`${getBackendBaseUrl()}/plan/${planId}`);
     } catch (error) {
       coverSaveError = error instanceof Error ? error.message : 'Unable to update cover.';
     }
@@ -506,7 +506,7 @@
     isPlanLocking = true;
     try {
       await apiFetch(`/plan/${planId}/lock-toggle`, { method: 'PUT' });
-      await invalidate(`/api/plan/${planId}`);
+      await invalidate(`${getBackendBaseUrl()}/plan/${planId}`);
     } catch (error) {
       planLockError = error instanceof Error ? error.message : 'Unable to update plan status.';
     } finally {
@@ -610,7 +610,7 @@
         method: 'PUT',
         body: JSON.stringify(updates)
       });
-      await invalidate(`/api/plan/${planId}`);
+      await invalidate(`${getBackendBaseUrl()}/plan/${planId}`);
       originalPlan = {
         title: planTitle.trim(),
         description: planDescription.trim(),
