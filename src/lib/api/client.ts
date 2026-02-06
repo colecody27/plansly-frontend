@@ -14,6 +14,14 @@ const getToken = () => {
   return localStorage.getItem('access_token_cookie');
 };
 
+const getCookie = (name: string) => {
+  if (!browser) {
+    return null;
+  }
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
 export const apiFetch = async <T>(
   path: string,
   options: RequestInit = {}
@@ -22,10 +30,17 @@ export const apiFetch = async <T>(
     throw new Error('Do not use /api proxy paths; call the backend directly.');
   }
   const token = getToken();
+  const method = (options.method ?? 'GET').toUpperCase();
+  const csrfToken = ['GET', 'HEAD', 'OPTIONS'].includes(method)
+    ? null
+    : getCookie('csrf_access_token');
   const headers = new Headers(options.headers ?? {});
   headers.set('Content-Type', 'application/json');
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
+  }
+  if (csrfToken) {
+    headers.set('X-CSRF-TOKEN', csrfToken);
   }
 
   const response = await fetch(`${BASE_URL}${path}`, {
