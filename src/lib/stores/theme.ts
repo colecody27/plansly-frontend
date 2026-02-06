@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
 
-const DEFAULT_THEME = 'plannit';
+const DEFAULT_THEME = 'plannit-dark';
 
 export const theme = writable(DEFAULT_THEME);
 

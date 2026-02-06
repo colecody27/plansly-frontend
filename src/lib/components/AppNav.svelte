@@ -53,13 +53,13 @@
       </ul>
     </div>
     <a class="hidden lg:flex items-center gap-3" href="/dashboard">
-      <img class="h-12 w-12 rounded-2xl" src="/logo.png" alt="iPlansly logo" />
-      <span class="text-lg font-semibold tracking-tight">iPlansly</span>
+      <img class="h-16 w-16 rounded-2xl" src="/logo.svg" alt="Plansly logo" />
+      <span class="text-lg font-semibold tracking-tight">Plansly</span>
     </a>
   </div>
   <div class="navbar-center lg:hidden">
     <a class="flex items-center gap-3" href="/dashboard">
-      <span class="text-lg font-semibold tracking-tight">iPlansly</span>
+      <span class="text-lg font-semibold tracking-tight">Plansly</span>
     </a>
   </div>
   <div class="navbar-center hidden lg:flex gap-8 text-sm font-semibold">

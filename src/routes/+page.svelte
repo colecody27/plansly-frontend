@@ -21,11 +21,12 @@
   <HeroLanding />
 
   <section class="px-6 lg:px-16 pb-12">
-    <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-base-content/50">
-      <span>Trending events</span>
-      <div class="flex flex-wrap gap-2">
-        {#each trending as item}
-          <span class="badge badge-outline">{item}</span>
+    <div class="trending-wheel" style={`--count:${trending.length};`}>
+      <div class="trending-wheel-track">
+        {#each trending as item, index}
+          <div class="trending-wheel-item" style={`--i:${index};`}>
+            <span>{item}</span>
+          </div>
         {/each}
       </div>
     </div>

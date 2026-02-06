@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title>Plannit logo</title>
+  <desc>Green orb with orbiting dots and a friendly smile</desc>
+  <defs>
+    <radialGradient id="orbGlow" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#7CFF9B"/>
+      <stop offset="45%" stop-color="#30E46C"/>
+      <stop offset="100%" stop-color="#0FBF4E"/>
+    </radialGradient>
+    <radialGradient id="ringGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#9CFFC0" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#2FD96D" stop-opacity="0.1"/>
+    </radialGradient>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <circle cx="128" cy="128" r="112" fill="none" stroke="url(#ringGlow)" stroke-width="2" opacity="0.6"/>
+  <circle cx="128" cy="128" r="86" fill="none" stroke="url(#ringGlow)" stroke-width="2" opacity="0.5"/>
+
+  <circle cx="128" cy="128" r="70" fill="url(#orbGlow)" filter="url(#softGlow)"/>
+  <circle cx="128" cy="128" r="52" fill="none" stroke="#6CFF9A" stroke-width="3" opacity="0.5"/>
+
+  <circle cx="108" cy="120" r="5.5" fill="#FFFFFF"/>
+  <circle cx="148" cy="120" r="5.5" fill="#FFFFFF"/>
+  <path
+    d="M106 146c10 10 34 10 44 0"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="6"
+    stroke-linecap="round"
+  />
+
+  <circle cx="74" cy="62" r="9" fill="#2FD96D" filter="url(#softGlow)"/>
+  <circle cx="182" cy="182" r="8" fill="#2FD96D" filter="url(#softGlow)"/>
+  <circle cx="96" cy="200" r="6.5" fill="#2FD96D" filter="url(#softGlow)"/>
+</svg>

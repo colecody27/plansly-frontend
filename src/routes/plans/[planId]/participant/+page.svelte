@@ -379,7 +379,7 @@
         const url = new URL('https://account.venmo.com/pay');
         url.searchParams.set('audience', 'private');
         url.searchParams.set('amount', amountDue.toFixed(2));
-        url.searchParams.set('note', `iPlansly plan: ${plan?.title ?? 'Plan'}`);
+        url.searchParams.set('note', `Plansly plan: ${plan?.title ?? 'Plan'}`);
         url.searchParams.set('recipients', venmoHandle);
         url.searchParams.set('txn', 'pay');
         return url.toString();

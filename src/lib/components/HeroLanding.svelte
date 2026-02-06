@@ -1,5 +1,6 @@
 <script lang="ts">
   import Avatar from '$lib/components/Avatar.svelte';
+  import { getLoginUrl } from '$lib/api/auth';
 </script>
 
 <section class="section-spacing px-6 lg:px-16">
@@ -10,12 +11,13 @@
         Organize plans with confidence and buy-in.
       </h1>
       <p class="text-base lg:text-lg text-base-content/70">
-        iPlansly keeps trips, events, and group purchases moving with live collaboration, clear
+        Plansly keeps trips, events, and group purchases moving with live collaboration, clear
         budgets, and instant RSVP clarity.
       </p>
       <div class="flex flex-col sm:flex-row gap-3">
-        <button class="btn btn-primary btn-lg shadow-glow">Start Planning for Free</button>
-        <button class="btn btn-outline btn-lg">Join an Event</button>
+        <a class="btn btn-primary btn-lg shadow-glow" href={getLoginUrl()}>
+          Start Planning for Free
+        </a>
       </div>
       <div class="flex flex-wrap gap-3 text-sm text-base-content/70">
         <span class="badge badge-outline">Trips</span>
@@ -25,7 +27,7 @@
       </div>
     </div>
     <div class="relative fade-in-up stagger-1">
-      <div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden">
+      <div class="card plan-glass border border-base-200 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md overflow-hidden">
         <img
           class="w-full h-[360px] object-cover"
           src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80"
@@ -33,7 +35,7 @@
         />
         <div class="p-5 space-y-3">
           <div class="flex items-center justify-between">
-            <span class="badge badge-success">RSVP Confirmed</span>
+            <span class="badge badge-success">Plan Confirmed</span>
             <span class="text-xs text-base-content/50">Live updates</span>
           </div>
           <div class="flex items-center gap-3">
@@ -46,7 +48,7 @@
           <progress class="progress progress-primary" value="70" max="100"></progress>
         </div>
       </div>
-      <div class="absolute -bottom-6 -left-6 bg-base-100 border border-base-200 shadow-lg rounded-2xl px-4 py-3 text-sm">
+      <div class="absolute -bottom-6 -left-6 plan-glass border border-base-200 shadow-sm rounded-2xl px-4 py-3 text-sm">
         <p class="font-semibold">Funding at 70%</p>
         <p class="text-xs text-base-content/60">5 of 8 paid</p>
       </div>
