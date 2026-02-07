@@ -29,9 +29,10 @@
     <div class="relative fade-in-up stagger-1">
       <div class="card plan-glass border border-base-200 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md overflow-hidden">
         <img
-          class="w-full h-[360px] object-cover"
-          src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80"
-          alt="Group photo"
+          class="w-full h-[320px] sm:h-[360px] lg:h-[480px] xl:h-[520px] object-cover bg-base-100"
+          src="/landing_image.png"
+          alt="Plansly friends"
+          style="object-position: 50% 60%;"
         />
         <div class="p-5 space-y-3">
           <div class="flex items-center justify-between">

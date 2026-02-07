@@ -10,8 +10,23 @@
   <div class="grid gap-6 mt-10 lg:grid-cols-3">
     <div class="card plan-glass border border-base-200 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <figure class="px-6 pt-6">
-        <div class="rounded-2xl h-40 w-full bg-primary/10 text-primary flex items-center justify-center">
-          <span class="material-symbols-outlined text-5xl">palette</span>
+        <div class="rounded-2xl h-40 w-full bg-primary/10 text-primary flex items-center justify-center icon-card icon-canvas">
+          <div class="canvas-board">
+            <div class="canvas-grid"></div>
+            <svg class="canvas-path" viewBox="0 0 160 160" aria-hidden="true">
+              <path d="M 26 128 L 80 78 L 134 30" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="6 6" />
+            </svg>
+            <div class="canvas-node canvas-node-1">
+              <span class="material-symbols-outlined">local_bar</span>
+            </div>
+            <div class="canvas-node canvas-node-2">
+              <span class="material-symbols-outlined">terrain</span>
+            </div>
+            <div class="canvas-node canvas-node-3">
+              <span class="material-symbols-outlined">photo_camera</span>
+            </div>
+            <div class="canvas-eraser"></div>
+          </div>
         </div>
       </figure>
       <div class="card-body">
@@ -21,8 +36,17 @@
     </div>
     <div class="card plan-glass border border-base-200 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <figure class="px-6 pt-6">
-        <div class="rounded-2xl h-40 w-full bg-secondary/10 text-secondary flex items-center justify-center">
-          <span class="material-symbols-outlined text-5xl">link</span>
+        <div class="rounded-2xl h-40 w-full bg-secondary/10 text-secondary flex items-center justify-center icon-card icon-link">
+          <div class="link-piece link-left">
+            <span class="material-symbols-outlined">link</span>
+          </div>
+          <div class="link-piece link-right">
+            <span class="material-symbols-outlined">link</span>
+          </div>
+          <div class="link-spark">
+            <span class="material-symbols-outlined">sync_alt</span>
+          </div>
+          <div class="link-ring"></div>
         </div>
       </figure>
       <div class="card-body">
@@ -32,8 +56,11 @@
     </div>
     <div class="card plan-glass border border-base-200 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <figure class="px-6 pt-6">
-        <div class="rounded-2xl h-40 w-full bg-accent/10 text-accent flex items-center justify-center">
-          <span class="material-symbols-outlined text-5xl">payments</span>
+        <div class="rounded-2xl h-40 w-full bg-accent/10 text-accent flex items-center justify-center icon-card icon-money">
+          <div class="money-coin">
+            <span class="material-symbols-outlined">payments</span>
+            <div class="money-ring"></div>
+          </div>
         </div>
       </figure>
       <div class="card-body">
