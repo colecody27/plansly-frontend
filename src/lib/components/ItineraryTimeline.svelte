@@ -464,7 +464,7 @@
         <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
           <span class="material-symbols-outlined text-xl">map</span>
         </span>
-        <h3 class="text-lg font-semibold text-primary">Plan Timeline</h3>
+        <h3 class="text-lg font-semibold text-primary">Timeline</h3>
       </div>
       {#if props.addTargetId && canAddActivities}
         <label

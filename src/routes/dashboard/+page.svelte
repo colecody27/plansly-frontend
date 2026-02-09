@@ -120,81 +120,100 @@
           {props.data.statusMessage}
         </div>
       {/if}
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div class="tabs tabs-bordered">
-          <button
-            class={`tab ${activeTab === 'all' ? 'tab-active text-primary border-primary' : ''}`}
-            type="button"
-            on:click={() => (activeTab = 'all')}
-          >
-            All ({props.data.plans.length})
-          </button>
-          <button
-            class={`tab ${activeTab === 'hosting' ? 'tab-active text-primary border-primary' : ''}`}
-            type="button"
-            on:click={() => (activeTab = 'hosting')}
-          >
-            Hosting ({hostingPlans.length})
-          </button>
-          <button
-            class={`tab ${activeTab === 'invited' ? 'tab-active text-primary border-primary' : ''}`}
-            type="button"
-            on:click={() => (activeTab = 'invited')}
-          >
-            Invited ({invitedPlans.length})
-          </button>
-          <button
-            class={`tab ${activeTab === 'past' ? 'tab-active text-primary border-primary' : ''}`}
-            type="button"
-            on:click={() => (activeTab = 'past')}
-          >
-            Past Events ({pastPlans.length})
-          </button>
+      <div class="flex flex-col gap-6">
+        <div class="order-1 lg:order-3 flex flex-col lg:flex-row gap-4">
+          <a class="btn btn-primary lg:order-2 gap-3" href="/plans/create">
+            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-neutral">
+              <span class="material-symbols-outlined text-[12px] text-primary">add</span>
+            </span>
+            Create New Plan
+          </a>
+          <label class="input input-bordered flex items-center gap-2 flex-1 lg:order-1">
+            <input
+              type="text"
+              class="grow"
+              placeholder="Search plans by title or location"
+              bind:value={searchTerm}
+            />
+            <span class="text-base-content/40">Search</span>
+          </label>
         </div>
-        <div class="flex gap-2">
-          <button class="btn btn-outline btn-sm" type="button" on:click={toggleDateSort}>
-            Date {dateSort === 'asc' ? '↑' : '↓'}
-          </button>
-          <button class="btn btn-outline btn-sm" type="button" on:click={cycleStatusFilter}>
-            Status: {statusFilter}
-          </button>
-          <button class="btn btn-primary btn-sm" type="button" on:click={() => (showFilters = !showFilters)}>
-            {showFilters ? 'Hide Filters' : 'More Filters'}
-          </button>
-        </div>
-      </div>
-      {#if showFilters}
-        <div class="card border border-base-200 bg-base-100/60">
-          <div class="card-body gap-3">
-            <div class="text-sm font-semibold">Plan Type</div>
-            <div class="flex flex-wrap gap-4 text-sm">
-              <label class="flex items-center gap-2">
-                <input type="checkbox" class="checkbox checkbox-sm" bind:checked={typeFilters.trip} />
-                Trip
-              </label>
-              <label class="flex items-center gap-2">
-                <input type="checkbox" class="checkbox checkbox-sm" bind:checked={typeFilters.event} />
-                Event
-              </label>
-              <label class="flex items-center gap-2">
-                <input type="checkbox" class="checkbox checkbox-sm" bind:checked={typeFilters.group} />
-                Group Purchase
-              </label>
-            </div>
+        <div class="order-2 lg:order-1 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div class="order-2 lg:order-1 -mx-2 flex gap-2 overflow-x-auto border-b border-base-200/70 px-2 pb-1 lg:mx-0 lg:border-none lg:pb-0">
+            <button
+              class={`px-3 py-2 text-sm font-semibold ${
+                activeTab === 'all' ? 'text-primary border-b-2 border-primary' : 'text-base-content/70'
+              }`}
+              type="button"
+              on:click={() => (activeTab = 'all')}
+            >
+              All ({props.data.plans.length})
+            </button>
+            <button
+              class={`px-3 py-2 text-sm font-semibold ${
+                activeTab === 'hosting' ? 'text-primary border-b-2 border-primary' : 'text-base-content/70'
+              }`}
+              type="button"
+              on:click={() => (activeTab = 'hosting')}
+            >
+              Hosting ({hostingPlans.length})
+            </button>
+            <button
+              class={`px-3 py-2 text-sm font-semibold ${
+                activeTab === 'invited' ? 'text-primary border-b-2 border-primary' : 'text-base-content/70'
+              }`}
+              type="button"
+              on:click={() => (activeTab = 'invited')}
+            >
+              Invited ({invitedPlans.length})
+            </button>
+            <button
+              class={`px-3 py-2 text-sm font-semibold ${
+                activeTab === 'past' ? 'text-primary border-b-2 border-primary' : 'text-base-content/70'
+              }`}
+              type="button"
+              on:click={() => (activeTab = 'past')}
+            >
+              Past Events ({pastPlans.length})
+            </button>
+          </div>
+          <div class="order-3 lg:order-2 flex flex-wrap gap-2">
+            <button class="btn btn-outline btn-sm" type="button" on:click={toggleDateSort}>
+              Date {dateSort === 'asc' ? '↑' : '↓'}
+            </button>
+            <button class="btn btn-outline btn-sm" type="button" on:click={cycleStatusFilter}>
+              Status: {statusFilter}
+            </button>
+            <button
+              class="btn btn-primary btn-sm"
+              type="button"
+              on:click={() => (showFilters = !showFilters)}
+            >
+              {showFilters ? 'Hide Filters' : 'More Filters'}
+            </button>
           </div>
         </div>
-      {/if}
-      <div class="flex flex-col lg:flex-row gap-4">
-        <label class="input input-bordered flex items-center gap-2 flex-1">
-          <input
-            type="text"
-            class="grow"
-            placeholder="Search plans by title or location"
-            bind:value={searchTerm}
-          />
-          <span class="text-base-content/40">Search</span>
-        </label>
-        <a class="btn btn-primary" href="/plans/create">Create New Plan</a>
+        {#if showFilters}
+          <div class="order-3 lg:order-2 card border border-base-200 bg-base-100/60">
+            <div class="card-body gap-3">
+              <div class="text-sm font-semibold">Plan Type</div>
+              <div class="flex flex-wrap gap-4 text-sm">
+                <label class="flex items-center gap-2">
+                  <input type="checkbox" class="checkbox checkbox-sm" bind:checked={typeFilters.trip} />
+                  Trip
+                </label>
+                <label class="flex items-center gap-2">
+                  <input type="checkbox" class="checkbox checkbox-sm" bind:checked={typeFilters.event} />
+                  Event
+                </label>
+                <label class="flex items-center gap-2">
+                  <input type="checkbox" class="checkbox checkbox-sm" bind:checked={typeFilters.group} />
+                  Group Purchase
+                </label>
+              </div>
+            </div>
+          </div>
+        {/if}
       </div>
     </div>
 

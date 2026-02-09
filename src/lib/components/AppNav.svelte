@@ -1,8 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
   import ThemeToggle from '$lib/components/ThemeToggle.svelte';
   import Avatar from '$lib/components/Avatar.svelte';
+  import { token } from '$lib/stores/auth';
 
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
@@ -33,6 +36,14 @@
     const index = Math.floor(Math.random() * avatarStyles.length);
     avatarClass = avatarStyles[index];
   });
+
+  const handleSignOut = () => {
+    token.set(null);
+    if (browser) {
+      document.cookie = 'access_token_cookie=; Max-Age=0; path=/';
+    }
+    goto('/');
+  };
 </script>
 
 <nav class="navbar px-6 lg:px-16 py-4">
@@ -92,6 +103,9 @@
         class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-48 border border-base-200"
       >
         <li><a href="/profile">Settings</a></li>
+        <li>
+          <button class="text-error" type="button" on:click={handleSignOut}>Sign Out</button>
+        </li>
       </ul>
     </div>
   </div>

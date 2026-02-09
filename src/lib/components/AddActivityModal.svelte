@@ -223,7 +223,14 @@
 
 <input id={modalId} type="checkbox" class="modal-toggle" bind:checked={open} />
 <div class="modal" role="dialog">
-  <div class="modal-box">
+  <div class="modal-box relative">
+    <label
+      for={modalId}
+      class="btn btn-ghost btn-sm absolute right-3 top-3"
+      aria-label="Close add activity modal"
+    >
+      ✕
+    </label>
     <h3 class="text-lg font-semibold mb-4">Add Activity</h3>
     <div class="space-y-3">
       <label class="form-control">

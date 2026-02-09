@@ -158,14 +158,8 @@
                 innerClass="bg-base-100 ring-4 ring-base-100"
               />
               <h3 class="text-lg font-semibold">{displayName}</h3>
-              <label class="btn btn-outline btn-sm mt-2">
+              <label class="btn btn-outline btn-sm mt-2" for="profile-photo-unavailable">
                 Upload Photo
-                <input
-                  class="hidden"
-                  type="file"
-                  accept="image/*"
-                  on:change={handleProfileImageChange}
-                />
               </label>
               <div class="grid grid-cols-2 gap-4 text-center w-full mt-4">
                 <div>
@@ -294,41 +288,41 @@
                 <h3 class="text-lg font-semibold">Notifications</h3>
                 <p class="text-sm text-base-content/60">Manage how you receive updates about your plans.</p>
               </div>
-              <div class="space-y-3">
+              <div class="space-y-3 opacity-60 pointer-events-none select-none">
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="font-semibold">New Invitations</p>
                     <p class="text-xs text-base-content/60">Receive email when you're invited to a new plan.</p>
                   </div>
-                  <input type="checkbox" class="toggle toggle-primary" checked />
+                  <input type="checkbox" class="toggle toggle-primary" checked disabled />
                 </div>
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="font-semibold">Trip Updates</p>
                     <p class="text-xs text-base-content/60">Notify me about changes to itinerary or details.</p>
                   </div>
-                  <input type="checkbox" class="toggle toggle-primary" checked />
+                  <input type="checkbox" class="toggle toggle-primary" checked disabled />
                 </div>
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="font-semibold">Payment Reminders</p>
                     <p class="text-xs text-base-content/60">Get reminded when buy-ins are due.</p>
                   </div>
-                  <input type="checkbox" class="toggle toggle-primary" checked />
+                  <input type="checkbox" class="toggle toggle-primary" checked disabled />
                 </div>
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="font-semibold">Chat Messages</p>
                     <p class="text-xs text-base-content/60">Push notifications for new chat messages.</p>
                   </div>
-                  <input type="checkbox" class="toggle" />
+                  <input type="checkbox" class="toggle" disabled />
                 </div>
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="font-semibold">Marketing Emails</p>
                     <p class="text-xs text-base-content/60">Receive news and updates from Plansly.</p>
                   </div>
-                  <input type="checkbox" class="toggle" />
+                  <input type="checkbox" class="toggle" disabled />
                 </div>
               </div>
             </div>
@@ -337,4 +331,17 @@
       </div>
     </section>
   </main>
+  <input id="profile-photo-unavailable" type="checkbox" class="modal-toggle" />
+  <div class="modal" role="dialog">
+    <div class="modal-box">
+      <h3 class="text-lg font-semibold mb-2">Feature unavailable</h3>
+      <p class="text-sm text-base-content/70">
+        Profile photo uploads aren’t available yet. Please check back soon!
+      </p>
+      <div class="modal-action">
+        <label for="profile-photo-unavailable" class="btn btn-primary">Okay</label>
+      </div>
+    </div>
+    <label class="modal-backdrop" for="profile-photo-unavailable">Close</label>
+  </div>
 </div>

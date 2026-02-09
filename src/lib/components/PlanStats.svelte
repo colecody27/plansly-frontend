@@ -52,19 +52,8 @@
 </script>
 
 <div class="stats-carousel-root space-y-2">
-  <div class="carousel w-full lg:grid lg:grid-cols-4 lg:gap-4">
+  <div class="carousel w-full lg:grid lg:grid-cols-3 lg:gap-4">
     <div id="stat-1" class="carousel-item w-full lg:w-auto justify-center carousel-snap">
-      <div class="card plan-glass stat-card w-full max-w-sm">
-        <div class="card-body gap-3">
-          <div class="flex items-center gap-2 text-primary">
-            <span class="material-symbols-outlined text-xl">payments</span>
-            <p class="text-xs font-semibold uppercase tracking-widest text-primary">Total Cost</p>
-          </div>
-          <p class="text-2xl font-black">${budget.toLocaleString()}</p>
-        </div>
-      </div>
-    </div>
-    <div id="stat-2" class="carousel-item w-full lg:w-auto justify-center carousel-snap">
       <div class="card plan-glass stat-card w-full max-w-sm">
         <div class="card-body gap-3">
           <div class="flex items-center gap-2 text-primary">
@@ -79,18 +68,18 @@
         </div>
       </div>
     </div>
-    <div id="stat-3" class="carousel-item w-full lg:w-auto justify-center carousel-snap">
+    <div id="stat-2" class="carousel-item w-full lg:w-auto justify-center carousel-snap">
       <div class="card plan-glass stat-card w-full max-w-sm">
         <div class="card-body gap-3">
           <div class="flex items-center gap-2 text-primary">
             <span class="material-symbols-outlined text-xl">group</span>
-            <p class="text-xs font-semibold uppercase tracking-widest text-primary">Cost/Person</p>
+            <p class="text-xs font-semibold uppercase tracking-widest text-primary">Your Cost</p>
           </div>
           <p class="text-2xl font-black">${perPerson.toLocaleString()}</p>
         </div>
       </div>
     </div>
-    <div id="stat-4" class="carousel-item w-full lg:w-auto justify-center carousel-snap">
+    <div id="stat-3" class="carousel-item w-full lg:w-auto justify-center carousel-snap">
       <div class="card plan-glass stat-card w-full max-w-sm">
         <div class="card-body gap-3">
           <div class="flex items-center gap-2 text-primary">
@@ -106,7 +95,6 @@
     <button class="h-2 w-2 rounded-full bg-secondary/60" type="button" data-target="stat-1"></button>
     <button class="h-2 w-2 rounded-full bg-secondary/60" type="button" data-target="stat-2"></button>
     <button class="h-2 w-2 rounded-full bg-secondary/60" type="button" data-target="stat-3"></button>
-    <button class="h-2 w-2 rounded-full bg-secondary/60" type="button" data-target="stat-4"></button>
   </div>
 </div>
 

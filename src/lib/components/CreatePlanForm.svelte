@@ -9,6 +9,11 @@
     { id: 'event', label: 'Event', description: 'Parties & meetups', disabled: true },
     { id: 'group', label: 'Group Buy', description: 'Shared purchases', disabled: true }
   ];
+  const planTypeIcons: Record<string, string> = {
+    trip: 'flight_takeoff',
+    event: 'celebration',
+    group: 'shopping_bag'
+  };
 
   let selectedType = 'trip';
   let allowBuyIn = true;
@@ -376,7 +381,19 @@
             }
           }}
         >
-          <div class="h-10 w-10 rounded-2xl bg-base-200 mb-3"></div>
+          <div
+            class={`flex h-10 w-10 items-center justify-center rounded-2xl bg-base-100 shadow-sm mb-3 ${
+              type.disabled
+                ? 'text-base-content/30'
+                : selectedType === type.id
+                  ? 'text-primary'
+                  : 'text-base-content/40'
+            }`}
+          >
+            <span class="material-symbols-outlined text-[22px] leading-none" aria-hidden="true">
+              {planTypeIcons[type.id] ?? 'flight_takeoff'}
+            </span>
+          </div>
           <h3 class="font-semibold">{type.label}</h3>
           <p class="text-sm text-base-content/60">{type.description}</p>
         </button>
@@ -389,7 +406,7 @@
         <span class="label-text">What are we calling this?</span>
         <input
           class="input input-bordered"
-          placeholder="Tahoe Ski Trip 2024"
+          placeholder="Tahoe Ski Trip 2026"
           bind:value={planName}
         />
       </label>
