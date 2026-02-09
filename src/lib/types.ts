@@ -95,6 +95,11 @@ export interface UserProfile {
   avatar?: string;
   venmoHandle?: string;
   bio?: string;
+  mutuals?: Array<{
+    id?: string;
+    name?: string;
+    avatar?: string;
+  }>;
   plansHosted?: number;
   plansJoined?: number;
   location?: string;

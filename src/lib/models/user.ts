@@ -19,6 +19,13 @@ export const mapUserProfileFromApi = (profile: ApiUserProfile): UserProfile => {
   const city = profile.city?.trim() || undefined;
   const locationParts = [city, state, country].filter(Boolean);
   const location = locationParts.length ? locationParts.join(', ') : undefined;
+  const mutuals = Array.isArray(profile.mutuals)
+    ? profile.mutuals.map((person) => ({
+        id: person.id ?? undefined,
+        name: person.name ?? 'Guest',
+        avatar: person.picture ?? undefined
+      }))
+    : undefined;
 
   return {
     id: profile.id ?? undefined,
@@ -31,6 +38,7 @@ export const mapUserProfileFromApi = (profile: ApiUserProfile): UserProfile => {
     bio: profile.bio ?? undefined,
     plansHosted: profile.hosting_count ?? undefined,
     plansJoined: profile.participating_count ?? undefined,
+    mutuals,
     location,
     country,
     state,

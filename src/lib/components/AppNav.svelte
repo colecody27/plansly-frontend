@@ -6,6 +6,7 @@
   import ThemeToggle from '$lib/components/ThemeToggle.svelte';
   import Avatar from '$lib/components/Avatar.svelte';
   import { token } from '$lib/stores/auth';
+  import { getBackendBaseUrl } from '$lib/api/client';
 
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
@@ -41,8 +42,10 @@
     token.set(null);
     if (browser) {
       document.cookie = 'access_token_cookie=; Max-Age=0; path=/';
+      window.location.href = `${getBackendBaseUrl()}/auth/logout`;
+    } else {
+      goto('/');
     }
-    goto('/');
   };
 </script>
 

@@ -535,9 +535,9 @@
     if (typeof window === 'undefined') {
       return;
     }
-    const statsSection = document.getElementById('plan-stats');
-    if (statsSection) {
-      statsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const modalInput = document.getElementById('payment-tracker-modal') as HTMLInputElement | null;
+    if (modalInput) {
+      modalInput.checked = true;
     }
   };
 
@@ -673,6 +673,55 @@
   const rejectedActivities = $derived.by(() =>
     activities.filter((activity) => activity.status?.toLowerCase() === 'rejected')
   );
+
+  let paymentSearch = $state('');
+  const paymentRows = $derived.by(() => {
+    const term = paymentSearch.trim().toLowerCase();
+    return participantsWithHost
+      .map((person) => {
+        const participantId = person.id;
+        const totals = activities.reduce(
+          (sum, activity) => {
+            if (!participantId) {
+              return sum;
+            }
+            const hasVote = Array.isArray(activity.votes)
+              ? activity.votes.some((vote) => vote.id === participantId)
+              : false;
+            if (!hasVote) {
+              return sum;
+            }
+            const cost = activity.cost ?? 0;
+            const hasPaid = Array.isArray(activity.payments)
+              ? activity.payments.includes(participantId)
+              : false;
+            sum.total += cost;
+            if (hasPaid) {
+              sum.paid += cost;
+            } else {
+              sum.due += cost;
+            }
+            return sum;
+          },
+          { total: 0, paid: 0, due: 0 }
+        );
+        return {
+          id: participantId ?? person.name,
+          name: person.name,
+          avatar: person.avatar ?? null,
+          role: person.status === 'organizer' ? 'Organizer' : 'Participant',
+          total: totals.total,
+          paid: totals.paid,
+          due: totals.due
+        };
+      })
+      .filter((row) => (term ? row.name.toLowerCase().includes(term) : true));
+  });
+  const paymentCollected = $derived.by(() => props.data.plan?.raised ?? 0);
+  const paymentGoal = $derived.by(() => confirmedTotalCost);
+  const paymentPercent = $derived.by(() =>
+    paymentGoal > 0 ? Math.min(100, Math.round((paymentCollected / paymentGoal) * 100)) : 0
+  );
 </script>
 
 <div>
@@ -689,6 +738,10 @@
           dateRange={formatTimeline()}
           location={planLocation}
           planStatus={props.data.plan.status}
+          extraActionLabel="Track Payments"
+          extraActionTargetId="payment-tracker-modal"
+          extraActionVariant="outline"
+          extraActionClass="hidden lg:inline-flex"
           inviteTargetId="invite-modal"
           showMeta={false}
           onInvite={loadInviteLink}
@@ -918,6 +971,7 @@
               planStatus={props.data.plan.status}
               addTargetId="add-activity-modal"
               emphasizeAdd={true}
+              showFinalizeActivity={true}
               bind:this={itineraryTimeline}
               on:activityUpdate={handleActivityUpdate}
               on:planUpdate={handlePlanUpdate}
@@ -1046,6 +1100,88 @@
         </div>
       </div>
       <label class="modal-backdrop" for="remove-participant-modal">Close</label>
+    </div>
+
+
+    <input id="payment-tracker-modal" type="checkbox" class="modal-toggle" />
+    <div class="modal" role="dialog">
+      <div class="modal-box max-w-lg">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-semibold">Payment Tracker</h3>
+            <p class="text-sm text-base-content/70">
+              Track contributions for "{props.data.plan?.title ?? 'Plan'}"
+            </p>
+          </div>
+          <label for="payment-tracker-modal" class="btn btn-ghost btn-sm">✕</label>
+        </div>
+        <div class="mt-4 flex gap-2">
+          <label class="input input-bordered flex items-center gap-2 flex-1">
+            <span class="material-symbols-outlined text-base">search</span>
+            <input
+              type="text"
+              class="grow"
+              placeholder="Find participant..."
+              bind:value={paymentSearch}
+            />
+          </label>
+          <button class="btn btn-outline btn-sm" type="button">Filter</button>
+        </div>
+        <div class="mt-4 space-y-3">
+          {#each paymentRows as row}
+            <div class="flex items-center justify-between rounded-2xl border border-base-200 px-3 py-2">
+              <div class="flex items-center gap-3">
+                <Avatar initials={row.name.slice(0, 2).toUpperCase()} imageUrl={row.avatar} />
+                <div>
+                  <p class="font-semibold text-sm">{row.name}</p>
+                  <p class="text-xs text-base-content/60">{row.role}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                {#if row.due > 0}
+                  <span class="badge badge-warning badge-sm">Unpaid</span>
+                  <span class="font-semibold text-sm">${row.due.toFixed(2)}</span>
+                {:else}
+                  <span class="badge badge-success badge-sm">Paid</span>
+                  <span class="font-semibold text-sm">${row.paid.toFixed(2)}</span>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+        <div class="mt-5 rounded-2xl border border-base-200 p-4">
+          <div class="flex items-end justify-between gap-4">
+            <div>
+              <p class="text-xs uppercase tracking-widest text-base-content/60">Total collected</p>
+              <p class="text-2xl font-black">${paymentCollected.toFixed(2)}</p>
+              <p class="text-xs text-base-content/60">of ${paymentGoal.toFixed(2)} goal</p>
+            </div>
+            <span class="badge badge-success">{paymentPercent}% Paid</span>
+          </div>
+          <progress class="progress progress-primary mt-3" value={paymentPercent} max="100"></progress>
+        </div>
+        <div class="mt-4">
+          <label class="btn btn-primary w-full" for="payment-reminder-modal">
+            <span class="material-symbols-outlined text-base">mail</span>
+            Send Reminder to Unpaid
+          </label>
+        </div>
+      </div>
+      <label class="modal-backdrop" for="payment-tracker-modal">Close</label>
+    </div>
+
+    <input id="payment-reminder-modal" type="checkbox" class="modal-toggle" />
+    <div class="modal" role="dialog">
+      <div class="modal-box">
+        <h3 class="text-lg font-semibold mb-3">Feature unavailable</h3>
+        <p class="text-sm text-base-content/70">
+          Sending reminders isn’t available yet.
+        </p>
+        <div class="modal-action">
+          <label for="payment-reminder-modal" class="btn btn-primary">Okay</label>
+        </div>
+      </div>
+      <label class="modal-backdrop" for="payment-reminder-modal">Close</label>
     </div>
 
     <input id="invite-modal" type="checkbox" class="modal-toggle" bind:checked={inviteModalOpen} />

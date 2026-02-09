@@ -12,6 +12,7 @@
   const props = $props();
   const canAddActivities = $derived.by(() => props.planStatus?.toLowerCase() === 'active');
   const dispatch = createEventDispatcher<{ activityUpdate: Activity; planUpdate: Activity[] }>();
+  const showFinalizeActivity = $derived(props.showFinalizeActivity ?? false);
 
   let activities = $state<Activity[]>(props.activities ?? []);
   let activityModalOpen = $state(false);
@@ -30,6 +31,9 @@
   let activityEndDate = $state('');
   let activityStartTime = $state('');
   let activityEndTime = $state('');
+  let finalizingActivityId = $state<string | null>(null);
+  let finalizeConfirmOpen = $state(false);
+  let finalizeTarget = $state<Activity | null>(null);
 
   const getRange = (activity: Activity) => {
     const start = activity.startTime ?? null;
@@ -114,6 +118,30 @@
     }
     cacheActivityVotes(normalized);
     dispatch('activityUpdate', normalized);
+  };
+
+  const applyActivityResponse = (response: unknown) => {
+    if (isPlanResponse(response)) {
+      const plan = mapPlanDetailFromApi(response.data);
+      const nextActivities = plan.activities.map(normalizeActivity);
+      activities = nextActivities;
+      dispatch('planUpdate', nextActivities);
+      return;
+    }
+    if (isPlanDetail(response)) {
+      const nextActivities = response.activities.map(normalizeActivity);
+      activities = nextActivities;
+      dispatch('planUpdate', nextActivities);
+      return;
+    }
+    const updatedActivity = isApiResponse(response)
+      ? mapActivityFromApi(response.data, 0)
+      : isActivity(response)
+        ? response
+        : null;
+    if (updatedActivity) {
+      updateActivity(updatedActivity);
+    }
   };
 
   const groupedActivities = $derived.by(() => {
@@ -220,29 +248,48 @@
         `/plan/${planId}/activity/${activity.id}/vote`,
         { method: 'POST' }
       );
-      if (isPlanResponse(response)) {
-        const plan = mapPlanDetailFromApi(response.data);
-        const nextActivities = plan.activities.map(normalizeActivity);
-        activities = nextActivities;
-        dispatch('planUpdate', nextActivities);
-      } else if (isPlanDetail(response)) {
-        const nextActivities = response.activities.map(normalizeActivity);
-        activities = nextActivities;
-        dispatch('planUpdate', nextActivities);
-      } else {
-        const updatedActivity = isApiResponse(response)
-          ? mapActivityFromApi(response.data, 0)
-          : isActivity(response)
-            ? response
-            : null;
-        if (updatedActivity) {
-          updateActivity(updatedActivity);
-        }
-      }
+      applyActivityResponse(response);
+      await invalidate(`${getBackendBaseUrl()}/plan/${planId}`);
     } catch (error) {
     } finally {
       isVoteSubmitting = false;
     }
+  };
+
+  const finalizeActivity = async (activity: Activity) => {
+    if (finalizingActivityId || !activity?.id) {
+      return;
+    }
+    const planId = $page.params.planId;
+    if (!planId) {
+      return;
+    }
+    finalizingActivityId = activity.id;
+    try {
+      const response = await apiFetch<ApiResponse<ApiActivity> | ApiResponse<ApiPlan> | Activity | PlanDetail>(
+        `/plan/${planId}/activity/${activity.id}/finalize`,
+        { method: 'PUT' }
+      );
+      applyActivityResponse(response);
+      await invalidate(`${getBackendBaseUrl()}/plan/${planId}`);
+    } catch (error) {
+      // ignore for now
+    } finally {
+      finalizingActivityId = null;
+    }
+  };
+
+  const openFinalizeConfirm = (activity: Activity) => {
+    finalizeTarget = activity;
+    finalizeConfirmOpen = true;
+  };
+
+  const confirmFinalize = () => {
+    if (finalizeTarget) {
+      finalizeActivity(finalizeTarget);
+    }
+    finalizeConfirmOpen = false;
+    finalizeTarget = null;
   };
 
   const formatDateInput = (value?: Date | null) => {
@@ -595,6 +642,17 @@
                             >
                               {activity.hasVoted ? "I'm out" : "I'm in"}
                             </button>
+                            {#if showFinalizeActivity && activity.status?.toLowerCase() !== 'confirmed' && (activity.votes?.length ?? 0) > 0}
+                              <button
+                                class="btn btn-sm btn-outline"
+                                type="button"
+                                on:click|stopPropagation={() => openFinalizeConfirm(activity)}
+                                disabled={finalizingActivityId === activity.id}
+                                aria-label="Lock activity"
+                              >
+                                <span class="material-symbols-outlined text-sm">lock</span>
+                              </button>
+                            {/if}
                             <div class="flex items-center">
                               <div class="flex -space-x-3">
                                 {#each (activity.votes ?? []).slice(0, 3) as voter}
@@ -658,6 +716,17 @@
                                     : group.activity.status}
                                 </span>
                               </div>
+                            {/if}
+                            {#if showFinalizeActivity && group.activity.status?.toLowerCase() !== 'confirmed' && (group.activity.votes?.length ?? 0) > 0}
+                              <button
+                                class="btn btn-xs btn-outline"
+                                type="button"
+                                on:click|stopPropagation={() => openFinalizeConfirm(group.activity)}
+                                disabled={finalizingActivityId === group.activity.id}
+                                aria-label="Lock activity"
+                              >
+                                <span class="material-symbols-outlined text-sm">lock</span>
+                              </button>
                             {/if}
                           </div>
                         </div>
@@ -920,7 +989,14 @@
             {#if selectedActivity?.isProposed && selectedActivity?.status?.toLowerCase() !== 'confirmed'}
               <button
                 class={`btn ${selectedActivity.hasVoted ? 'btn-outline border-primary text-primary' : 'btn-primary'}`}
-                on:click={() => selectedActivity && toggleVote(selectedActivity)}
+                on:click={() => {
+                  if (selectedActivity) {
+                    toggleVote(selectedActivity);
+                  }
+                  if (!selectedActivity?.hasVoted) {
+                    closeActivityModal();
+                  }
+                }}
                 disabled={isVoteSubmitting}
                 type="button"
               >
@@ -989,5 +1065,30 @@
       {/if}
     </div>
   </div>
-  <div class="modal-backdrop" role="presentation" on:click={closeActivityModal}></div>
+<div class="modal-backdrop" role="presentation" on:click={closeActivityModal}></div>
 </div>
+
+{#if finalizeConfirmOpen}
+  <div class="modal modal-open" role="dialog">
+    <div class="modal-box">
+      <h3 class="text-lg font-semibold mb-3">Lock activity?</h3>
+      <p class="text-sm text-base-content/70">
+        Locking this activity will confirm it and close voting for participants.
+      </p>
+      <div class="modal-action">
+        <button class="btn btn-outline" type="button" on:click={() => (finalizeConfirmOpen = false)}>
+          Cancel
+        </button>
+        <button
+          class="btn btn-primary"
+          type="button"
+          on:click={confirmFinalize}
+          disabled={Boolean(finalizingActivityId)}
+        >
+          {finalizingActivityId ? 'Locking...' : 'Lock Activity'}
+        </button>
+      </div>
+    </div>
+    <div class="modal-backdrop" on:click={() => (finalizeConfirmOpen = false)}></div>
+  </div>
+{/if}

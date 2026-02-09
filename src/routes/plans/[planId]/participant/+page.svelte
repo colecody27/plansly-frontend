@@ -9,7 +9,7 @@
   import AddActivityModal from '$lib/components/AddActivityModal.svelte';
   import ProposedActivities from '$lib/components/ProposedActivities.svelte';
   import PaymentSuccessModal from '$lib/components/PaymentSuccessModal.svelte';
-  import { formatShortDate } from '$lib/models/plan';
+  import { formatShortDate, mapPlanDetailFromApi } from '$lib/models/plan';
   import { onDestroy, onMount } from 'svelte';
   import { joinPlan, leavePlan, onAnnouncement, onMessage, onUsers, sendMessage } from '$lib/socket';
   import { apiFetch, getBackendBaseUrl } from '$lib/api/client';
@@ -18,9 +18,10 @@
   import { browser } from '$app/environment';
 
   const props = $props();
-  const plan = props.data.plan;
+  let planOverride = $state<import('$lib/types').PlanDetail | null>(null);
+  const plan = $derived(planOverride ?? props.data.plan);
   const statusMessage = props.data.statusMessage ?? '';
-  const planLocked = (plan?.status ?? '').toLowerCase() === 'locked';
+  const planLocked = $derived((plan?.status ?? '').toLowerCase() === 'locked');
   let copiedVenmo = $state(false);
   let addActivityOpen = $state(false);
   let paymentSuccessOpen = $state(false);
@@ -34,19 +35,22 @@
   let copiedInvite = $state(false);
   let coverImage = $state(plan?.coverImage ?? '');
 
-  const host =
+  const host = $derived(
     plan?.organizer ??
-    plan?.participants.find((person) => person.status === 'organizer') ??
-    plan?.participants[0] ??
-    null;
-  const hostInitials = host?.name
-    ? host.name
-        .split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase())
-        .join('')
-    : 'H';
+      plan?.participants.find((person) => person.status === 'organizer') ??
+      plan?.participants[0] ??
+      null
+  );
+  const hostInitials = $derived(
+    host?.name
+      ? host.name
+          .split(' ')
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((part) => part[0]?.toUpperCase())
+          .join('')
+      : 'H'
+  );
 
   let activities = $state(plan?.activities ?? []);
   let chatMessages = $state(plan?.chat ?? []);
@@ -62,6 +66,33 @@
       coverImage = plan.coverImage;
     }
   });
+
+  const updatePlanFromPayload = (payload: unknown) => {
+    const data =
+      payload && typeof payload === 'object' && 'data' in payload
+        ? (payload as { data?: unknown }).data
+        : payload;
+    if (!data || typeof data !== 'object') {
+      return;
+    }
+    const planData = 'plan' in data ? (data as { plan?: unknown }).plan : data;
+    if (!planData || typeof planData !== 'object') {
+      return;
+    }
+    const coverImageOverride =
+      'image_urls' in data && typeof (data as { image_urls?: { selected?: string } }).image_urls === 'object'
+        ? (data as { image_urls?: { selected?: string } }).image_urls?.selected
+        : undefined;
+    const nextPlan = mapPlanDetailFromApi(
+      planData as import('$lib/api/types').ApiPlan,
+      0,
+      coverImageOverride
+    );
+    planOverride = nextPlan;
+    activities = nextPlan.activities;
+    chatMessages = nextPlan.chat;
+    coverImage = nextPlan.coverImage;
+  };
 
   const buildInviteLink = (rawLink: string, planId: string, inviteId: string) => {
     const origin = browser ? window.location.origin : '';
@@ -438,17 +469,22 @@
       return;
     }
     try {
-      await apiFetch(`/plan/${plan.id}/pay`, { method: 'PUT' });
+      const response = await apiFetch(`/plan/${plan.id}/pay`, { method: 'PUT' });
+      updatePlanFromPayload(response);
       console.log('Payment success modal opening');
       paymentSuccessOpen = true;
-      setTimeout(() => {
+      setTimeout(async () => {
         console.log('Payment success modal closing');
         paymentSuccessOpen = false;
         const paymentModal = document.getElementById('payment-modal') as HTMLInputElement | null;
         if (paymentModal) {
           paymentModal.checked = false;
         }
-        invalidate(`${getBackendBaseUrl()}/plan/${plan.id}`);
+        try {
+          await invalidate(`${getBackendBaseUrl()}/plan/${plan.id}`);
+        } finally {
+          planOverride = null;
+        }
       }, 1500);
     } catch (error) {
       // TODO: surface error if needed

@@ -5,6 +5,7 @@
   import Avatar from '$lib/components/Avatar.svelte';
   import LocationAutocomplete from '$lib/components/LocationAutocomplete.svelte';
   import { apiFetch, getBackendBaseUrl } from '$lib/api/client';
+  import { token } from '$lib/stores/auth';
 
   const sidebarItems = [
     { label: 'Personal Information', active: true },
@@ -137,6 +138,14 @@
       isSaving = false;
     }
   };
+
+  const handleSignOut = () => {
+    token.set(null);
+    if (browser) {
+      document.cookie = 'access_token_cookie=; Max-Age=0; path=/';
+      window.location.href = `${getBackendBaseUrl()}/auth/logout`;
+    }
+  };
 </script>
 
 <div>
@@ -181,6 +190,12 @@
                   class={`btn btn-ghost justify-start ${item.active ? 'bg-primary/10 text-primary' : ''} ${
                     item.danger ? 'text-error' : ''
                   }`}
+                  type="button"
+                  on:click={() => {
+                    if (item.label === 'Sign Out') {
+                      handleSignOut();
+                    }
+                  }}
                 >
                   {item.label}
                 </button>

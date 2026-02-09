@@ -92,6 +92,11 @@ export interface ApiUserProfile {
   last_name?: string;
   email?: string;
   bio?: string;
+  mutuals?: Array<{
+    id?: string;
+    name?: string;
+    picture?: string;
+  }>;
   hosting_count?: number;
   participating_count?: number;
   country?: string;
