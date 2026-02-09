@@ -209,7 +209,7 @@
             <div class="card-body gap-4">
               <div>
                 <h3 class="text-lg font-semibold">Mutuals</h3>
-                <p class="text-sm text-base-content/60">People you have hosted events with recently.</p>
+                <p class="text-sm text-base-content/60">People you have been social with recently.</p>
               </div>
               <div class="flex flex-wrap gap-3">
                 {#if mutuals.length}
