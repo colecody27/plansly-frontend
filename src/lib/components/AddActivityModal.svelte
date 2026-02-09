@@ -148,6 +148,23 @@
       activityError = 'Plan is unavailable.';
       return;
     }
+    if (activityCost) {
+      const trimmedCost = activityCost.trim();
+      const numericPattern = /^\d+(\.\d{1,2})?$/;
+      if (!numericPattern.test(trimmedCost)) {
+        activityError = 'Cost must be a valid number.';
+        return;
+      }
+      const parsedCost = Number(trimmedCost);
+      if (Number.isNaN(parsedCost)) {
+        activityError = 'Cost must be a number.';
+        return;
+      }
+      if (parsedCost < 0) {
+        activityError = 'Cost cannot be negative.';
+        return;
+      }
+    }
     if (activityStartDay) {
       const today = startOfDay(new Date());
       const parsed = parseLocalDate(activityStartDay);
