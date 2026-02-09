@@ -119,6 +119,7 @@
                 size="sm"
                 status="online"
                 textClass="text-xs"
+                imageUrl={person.avatar ?? null}
               />
             {/if}
           {/each}

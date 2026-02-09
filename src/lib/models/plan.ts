@@ -28,7 +28,7 @@ const mapParticipant = (person: unknown, index: number): Participant => {
     return {
       id: (data.id as string) || (data._id as string) || `participant-${index}`,
       name: (data.name as string) || 'Guest',
-      avatar: data.avatar as string | undefined,
+      avatar: (data.picture as string) || (data.avatar as string) || undefined,
       status: data.status as Participant['status']
     };
   }
