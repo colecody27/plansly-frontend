@@ -349,7 +349,7 @@
         image_id: selectedCoverImageId || undefined,
         image_key: selectedCoverImageId ? undefined : selectedCoverImageKey || undefined
       });
-      await goto(`/plans/${response.data.id}/organizer`);
+      await goto(`/plans/${response.data.id}`);
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Unable to create plan.';
     } finally {

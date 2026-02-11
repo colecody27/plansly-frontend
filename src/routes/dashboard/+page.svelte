@@ -222,7 +222,7 @@
         {@const isHost = isHostingPlan(plan)}
         <PlanCard
           {plan}
-          ctaHref={isHost ? `/plans/${plan.id}/organizer` : `/plans/${plan.id}/participant`}
+          ctaHref={`/plans/${plan.id}`}
           ctaLabel={isHost ? 'Manage' : 'View'}
         />
       {/each}

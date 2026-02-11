@@ -23,6 +23,12 @@
 
   let isAccepting = $state(false);
   let acceptError = $state('');
+  const normalizePlanRedirect = (target: string | undefined, planId: string) => {
+    if (!target) {
+      return `/plans/${planId}`;
+    }
+    return target.replace(/(\/plans\/[^/]+)\/(participant|organizer)(?=$|[/?#])/, '$1');
+  };
 
   const handleAccept = async () => {
     if (!plan || isAccepting) {
@@ -37,7 +43,7 @@
           method: 'POST'
         }
       );
-      await goto(response?.redirect ?? `/plans/${plan.id}/participant`);
+      await goto(normalizePlanRedirect(response?.redirect, plan.id));
     } catch (error) {
       const status = (error as Error & { status?: number })?.status;
       if (browser && (status === 401 || status === 403)) {

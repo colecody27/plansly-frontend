@@ -34,11 +34,11 @@
   class="card plan-glass border border-base-200 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md overflow-hidden cursor-pointer"
   role="link"
   tabindex="0"
-  on:click={() => goto(ctaHref ?? `/plans/${plan.id}/organizer`)}
+  on:click={() => goto(ctaHref ?? `/plans/${plan.id}`)}
   on:keydown={(event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      goto(ctaHref ?? `/plans/${plan.id}/organizer`);
+      goto(ctaHref ?? `/plans/${plan.id}`);
     }
   }}
 >
@@ -134,7 +134,7 @@
         </div>
       <a
         class="btn btn-outline btn-xs text-primary border-primary"
-        href={ctaHref ?? `/plans/${plan.id}/organizer`}
+        href={ctaHref ?? `/plans/${plan.id}`}
         on:click|stopPropagation
       >
         <span>{ctaLabel}</span>
