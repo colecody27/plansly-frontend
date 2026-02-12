@@ -40,6 +40,7 @@ export interface ApiPlan {
   id?: string;
   _id?: string;
   invitation_id?: string;
+  is_public?: boolean;
   name?: string;
   description?: string;
   type?: ApiPlanType;
@@ -57,6 +58,8 @@ export interface ApiPlan {
   theme?: string;
   participant_ids?: unknown[];
   participants?: unknown[];
+  admin_ids?: unknown[];
+  admins?: unknown[];
   organizer?: {
     id?: string;
     name?: string;

@@ -4,7 +4,7 @@ export interface Participant {
   id: string;
   name: string;
   avatar?: string;
-  status?: 'paid' | 'pending' | 'organizer';
+  status?: 'paid' | 'pending' | 'organizer' | 'admin';
   contribution?: number;
 }
 
@@ -48,6 +48,7 @@ export interface Plan {
   invitationId?: string;
   title: string;
   type: PlanType;
+  isPublic?: boolean;
   status: string;
   deadline: Date | null;
   startDay?: Date | null;

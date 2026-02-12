@@ -5,7 +5,7 @@
   const props = $props();
 </script>
 
-{#if props.data.isOrganizer}
+{#if props.data.viewerRole === 'organizer'}
   <OrganizerPlanPage data={props.data} />
 {:else}
   <ParticipantPlanPage data={props.data} />

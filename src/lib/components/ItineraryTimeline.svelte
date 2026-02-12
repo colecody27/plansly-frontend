@@ -11,6 +11,7 @@
 
   const props = $props();
   const canAddActivities = $derived.by(() => props.planStatus?.toLowerCase() === 'active');
+  const allowVote = $derived.by(() => props.allowVote ?? true);
   const dispatch = createEventDispatcher<{ activityUpdate: Activity; planUpdate: Activity[] }>();
   const showFinalizeActivity = $derived(props.showFinalizeActivity ?? false);
 
@@ -234,6 +235,9 @@
   };
 
   const toggleVote = async (activity: Activity) => {
+    if (!allowVote) {
+      return;
+    }
     if (isVoteSubmitting) {
       return;
     }
@@ -520,10 +524,6 @@
         >
           + Add Activity
         </label>
-      {:else if !props.addTargetId}
-        <button class={`btn btn-sm ${props.emphasizeAdd ? 'btn-primary' : 'btn-ghost text-primary'}`}>
-          + Add Activity
-        </button>
       {/if}
     </div>
 
@@ -538,8 +538,6 @@
               <label class="btn btn-ghost text-primary" for={props.addTargetId}>
                 Add Activity
               </label>
-            {:else if !props.addTargetId}
-              <button class="btn btn-ghost text-primary" type="button">Add Activity</button>
             {/if}
           </div>
         </div>
@@ -630,18 +628,20 @@
                             </div>
                           </button>
                           <div class="flex items-center gap-3">
-                            <button
-                              class={`btn btn-sm ${
-                                activity.hasVoted
-                                  ? 'btn-outline border-primary text-primary'
-                                  : 'btn-primary'
-                              }`}
-                              type="button"
-                              on:click|stopPropagation={() => toggleVote(activity)}
-                              disabled={isVoteSubmitting}
-                            >
-                              {activity.hasVoted ? "I'm out" : "I'm in"}
-                            </button>
+                            {#if allowVote}
+                              <button
+                                class={`btn btn-sm ${
+                                  activity.hasVoted
+                                    ? 'btn-outline border-primary text-primary'
+                                    : 'btn-primary'
+                                }`}
+                                type="button"
+                                on:click|stopPropagation={() => toggleVote(activity)}
+                                disabled={isVoteSubmitting}
+                              >
+                                {activity.hasVoted ? "I'm out" : "I'm in"}
+                              </button>
+                            {/if}
                             {#if showFinalizeActivity && activity.status?.toLowerCase() !== 'confirmed' && (activity.votes?.length ?? 0) > 0}
                               <button
                                 class="btn btn-sm btn-outline"
@@ -758,7 +758,7 @@
                               {/if}
                             </div>
                           </div>
-                            {#if group.activity.isProposed && group.activity.status?.toLowerCase() !== 'confirmed'}
+                            {#if allowVote && group.activity.isProposed && group.activity.status?.toLowerCase() !== 'confirmed'}
                               <button
                                 class={`btn btn-xs ml-auto ${
                                   group.activity.hasVoted
@@ -786,7 +786,9 @@
                                 <span class="font-semibold">{option.name}</span>
                               </div>
                               <div class="flex items-center gap-3">
-                                <button class="btn btn-xs btn-outline">Vote</button>
+                                {#if allowVote}
+                                  <button class="btn btn-xs btn-outline">Vote</button>
+                                {/if}
                               </div>
                             </div>
                           {/each}
@@ -986,7 +988,7 @@
             <div class="text-sm text-base-content/70 font-semibold">
               Who’s in ({selectedActivity?.votes?.length ?? 0})
             </div>
-            {#if selectedActivity?.isProposed && selectedActivity?.status?.toLowerCase() !== 'confirmed'}
+            {#if allowVote && selectedActivity?.isProposed && selectedActivity?.status?.toLowerCase() !== 'confirmed'}
               <button
                 class={`btn ${selectedActivity.hasVoted ? 'btn-outline border-primary text-primary' : 'btn-primary'}`}
                 on:click={() => {
@@ -1002,8 +1004,6 @@
               >
                 {selectedActivity.hasVoted ? "I'm out!" : "I'm in!"}
               </button>
-            {:else if selectedActivity?.status?.toLowerCase() !== 'confirmed'}
-              <button class="btn btn-primary">Join Activity</button>
             {/if}
           </div>
           <div class="flex gap-4 overflow-x-auto pb-2">

@@ -22,14 +22,27 @@ const parseDate = (value?: string | null): Date | null => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+const resolveEntityId = (entry: unknown): string | null => {
+  if (typeof entry === 'string') {
+    return entry;
+  }
+  if (entry && typeof entry === 'object') {
+    const data = entry as Record<string, unknown>;
+    const id = data.id ?? data._id;
+    return typeof id === 'string' && id ? id : null;
+  }
+  return null;
+};
+
 const mapParticipant = (person: unknown, index: number): Participant => {
   if (person && typeof person === 'object') {
     const data = person as Record<string, unknown>;
+    const isAdmin = typeof data.is_admin === 'boolean' ? data.is_admin : false;
     return {
       id: (data.id as string) || (data._id as string) || `participant-${index}`,
       name: (data.name as string) || 'Guest',
       avatar: (data.picture as string) || (data.avatar as string) || undefined,
-      status: data.status as Participant['status']
+      status: isAdmin ? 'admin' : (data.status as Participant['status'])
     };
   }
   return {
@@ -181,6 +194,17 @@ export const mapPlanFromApi = (
     : Array.isArray(plan.participant_ids)
       ? plan.participant_ids.map(mapParticipant)
       : [];
+  const adminEntries = Array.isArray(plan.admins)
+    ? plan.admins
+    : Array.isArray(plan.admin_ids)
+      ? plan.admin_ids
+      : [];
+  const adminIds = new Set(
+    adminEntries
+      .map((entry) => resolveEntityId(entry))
+      .filter((id): id is string => Boolean(id))
+  );
+
   if (plan.organizer?.id) {
     const hasOrganizer = participants.some((person) => person.id === plan.organizer?.id);
     if (!hasOrganizer) {
@@ -193,11 +217,43 @@ export const mapPlanFromApi = (
     }
   }
 
+  const participantById = new Map(participants.map((participant) => [participant.id, participant]));
+  for (const adminEntry of adminEntries) {
+    const adminId = resolveEntityId(adminEntry);
+    if (!adminId || participantById.has(adminId)) {
+      continue;
+    }
+    if (adminEntry && typeof adminEntry === 'object') {
+      const data = adminEntry as Record<string, unknown>;
+      const name = typeof data.name === 'string' && data.name ? data.name : 'Admin';
+      const avatar = (data.picture as string) || (data.avatar as string) || undefined;
+      const adminParticipant: Participant = {
+        id: adminId,
+        name,
+        avatar,
+        status: 'admin'
+      };
+      participants.push(adminParticipant);
+      participantById.set(adminId, adminParticipant);
+    }
+  }
+
+  const normalizedParticipants = participants.map((participant) => {
+    if (participant.status === 'organizer') {
+      return participant;
+    }
+    if (adminIds.has(participant.id)) {
+      return { ...participant, status: 'admin' as const };
+    }
+    return participant;
+  });
+
   return {
     id: plan.id ?? `plan-${index}`,
     invitationId: plan.invitation_id ?? undefined,
     title: plan.name ?? 'Untitled Plan',
     type: normalizePlanType(plan.type),
+    isPublic: Boolean(plan.is_public),
     status: plan.status ?? 'active',
     deadline: parseDate(plan.deadline),
     startDay: parseDate(plan.start_day),
@@ -210,7 +266,7 @@ export const mapPlanFromApi = (
     goal,
     raised,
     perPerson,
-    participants,
+    participants: normalizedParticipants,
     organizer: plan.organizer
       ? {
           id: plan.organizer.id ?? undefined,

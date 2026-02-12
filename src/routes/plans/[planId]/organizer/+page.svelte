@@ -50,6 +50,8 @@
   let isPlanLocking = $state(false);
   let planSaveError = $state('');
   let planLockError = $state('');
+  let participantManageError = $state('');
+  let promotingParticipantId = $state<string | null>(null);
   let coverSaveError = $state('');
   let planDateError = $state('');
   let planTitle = $state(props.data.plan?.title ?? '');
@@ -531,6 +533,27 @@
     addActivityOpen = true;
   };
 
+  const setParticipantAdminState = async (participantId: string, isCurrentlyAdmin: boolean) => {
+    const planId = props.data.plan?.id;
+    if (!planId || !participantId || promotingParticipantId) {
+      return;
+    }
+    participantManageError = '';
+    promotingParticipantId = participantId;
+    try {
+      await apiFetch(`/plan/${planId}/admin/${participantId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ is_admin: !isCurrentlyAdmin })
+      });
+      await invalidate(`${getBackendBaseUrl()}/plan/${planId}`);
+    } catch (error) {
+      participantManageError =
+        error instanceof Error ? error.message : 'Unable to update participant role.';
+    } finally {
+      promotingParticipantId = null;
+    }
+  };
+
   const openCosts = () => {
     if (typeof window === 'undefined') {
       return;
@@ -709,7 +732,12 @@
           id: participantId ?? person.name,
           name: person.name,
           avatar: person.avatar ?? null,
-          role: person.status === 'organizer' ? 'Organizer' : 'Participant',
+          role:
+            person.status === 'organizer'
+              ? 'Organizer'
+              : person.status === 'admin'
+                ? 'Admin'
+                : 'Participant',
           total: totals.total,
           paid: totals.paid,
           due: totals.due
@@ -944,8 +972,10 @@
                       <p class="font-semibold text-sm">{person.name}</p>
                       {#if person.status === 'organizer'}
                         <span class="badge badge-success badge-xs">Organizer</span>
-                      {:else if person.status === 'paid'}
-                        <span class="text-xs text-primary">Paid</span>
+                      {:else}
+                        <p class="text-xs text-base-content/60">
+                          {person.status === 'admin' ? 'Admin' : 'Participant'}
+                        </p>
                       {/if}
                     </div>
                   </div>
@@ -1011,6 +1041,9 @@
     <div class="modal" role="dialog">
       <div class="modal-box">
         <h3 class="text-lg font-semibold mb-4">Manage Participants</h3>
+        {#if participantManageError}
+          <div class="alert alert-error text-sm mb-3">{participantManageError}</div>
+        {/if}
         <div class="space-y-3">
           {#if props.data.plan}
             {#each participantsWithHost as person}
@@ -1026,15 +1059,33 @@
                   {#if person.status === 'organizer'}
                     <span class="badge badge-success badge-xs">Organizer</span>
                   {:else}
-                    <p class="text-xs text-base-content/60">{person.status ?? 'participant'}</p>
+                    <p class="text-xs text-base-content/60">
+                      {person.status === 'admin' ? 'Admin' : 'Participant'}
+                    </p>
                   {/if}
                 </div>
               </div>
-              {#if person.status !== 'organizer'}
-                <label class="btn btn-xs btn-outline text-error" for="remove-participant-modal">
-                  Remove
-                </label>
-              {/if}
+              <div class="flex items-center gap-2">
+                {#if props.data.plan?.isPublic && person.status !== 'organizer'}
+                  <button
+                    class="btn btn-xs btn-outline"
+                    type="button"
+                    on:click={() => setParticipantAdminState(person.id, person.status === 'admin')}
+                    disabled={promotingParticipantId === person.id}
+                  >
+                    {promotingParticipantId === person.id
+                      ? 'Updating...'
+                      : person.status === 'admin'
+                        ? 'Make Participant'
+                        : 'Make Admin'}
+                  </button>
+                {/if}
+                {#if person.status !== 'organizer'}
+                  <label class="btn btn-xs btn-outline text-error" for="remove-participant-modal">
+                    Remove
+                  </label>
+                {/if}
+              </div>
             </div>
             {/each}
           {/if}

@@ -13,13 +13,20 @@
   import { onDestroy, onMount } from 'svelte';
   import { joinPlan, leavePlan, onAnnouncement, onMessage, onUsers, sendMessage } from '$lib/socket';
   import { apiFetch, getBackendBaseUrl } from '$lib/api/client';
-  import { invalidate } from '$app/navigation';
+  import { goto, invalidate } from '$app/navigation';
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
 
   const props = $props();
   let planOverride = $state<import('$lib/types').PlanDetail | null>(null);
   const plan = $derived(planOverride ?? props.data.plan);
+  const viewerRole = $derived(
+    (props.data.viewerRole ?? 'participant') as 'viewer' | 'participant' | 'admin'
+  );
+  const canChat = $derived(viewerRole !== 'viewer');
+  const canVote = $derived(viewerRole !== 'viewer');
+  const canProposeActivities = $derived(viewerRole === 'admin');
+  const canJoinPlan = $derived(viewerRole === 'viewer');
   const statusMessage = props.data.statusMessage ?? '';
   const planLocked = $derived((plan?.status ?? '').toLowerCase() === 'locked');
   let copiedVenmo = $state(false);
@@ -34,6 +41,8 @@
   let isInviteLoading = $state(false);
   let copiedInvite = $state(false);
   let coverImage = $state(plan?.coverImage ?? '');
+  let isJoiningPlan = $state(false);
+  let joinPlanError = $state('');
 
   const host = $derived(
     plan?.organizer ??
@@ -257,6 +266,9 @@
   };
 
   const handleSendMessage = async (text: string) => {
+    if (!canChat) {
+      return;
+    }
     if (!plan?.id) {
       return;
     }
@@ -274,6 +286,9 @@
   let chatSubscribed = $state(false);
   $effect(() => {
     if (chatSubscribed) {
+      return;
+    }
+    if (!canChat) {
       return;
     }
     const planId = plan?.id;
@@ -299,7 +314,7 @@
 
   onDestroy(() => {
     console.log('Participant chat destroy', { planId: plan?.id ?? null });
-    if (plan?.id) {
+    if (canChat && plan?.id) {
       leavePlan(plan.id);
     }
     unsubscribeMessages();
@@ -362,11 +377,34 @@
   };
 
   const handleAddActivityClick = () => {
+    if (!canProposeActivities) {
+      return;
+    }
     if (planLocked) {
       lockedActivityNoticeOpen = true;
       return;
     }
     addActivityOpen = true;
+  };
+
+  const handleJoinPlan = async () => {
+    if (!plan?.id || !canJoinPlan || isJoiningPlan) {
+      return;
+    }
+    joinPlanError = '';
+    isJoiningPlan = true;
+    try {
+      const response = await apiFetch(`/plan/${plan.id}/join`, { method: 'PUT' });
+      updatePlanFromPayload(response);
+      await goto(`/plans/${plan.id}`, {
+        invalidateAll: true,
+        replaceState: true
+      });
+    } catch (error) {
+      joinPlanError = error instanceof Error ? error.message : 'Unable to join this plan right now.';
+    } finally {
+      isJoiningPlan = false;
+    }
   };
 
   const openCosts = () => {
@@ -506,7 +544,7 @@
             location={plan.location}
             planStatus={plan.status}
             showFinalize={false}
-            showInvite={false}
+            showInvite={canChat}
             showMeta={false}
           />
           <div class="card plan-glass shadow-sm">
@@ -597,12 +635,32 @@
             countdown={formatCountdown(plan.startDay ?? null)}
           />
         </div>
+        {#if canJoinPlan}
+          <div class="card plan-glass shadow-sm">
+            <div class="card-body lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <h3 class="text-lg font-semibold">Join this public plan</h3>
+                <p class="text-sm text-base-content/70">
+                  Join to unlock chat and voting on proposed activities.
+                </p>
+                {#if joinPlanError}
+                  <p class="mt-2 text-xs text-error">{joinPlanError}</p>
+                {/if}
+              </div>
+              <button class="btn btn-primary" type="button" on:click={handleJoinPlan} disabled={isJoiningPlan}>
+                {isJoiningPlan ? 'Joining...' : 'Join Plan'}
+              </button>
+            </div>
+          </div>
+        {/if}
 
         <div class="card plan-glass shadow-sm lg:hidden people-carousel-root">
           <div class="card-body gap-4">
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-semibold text-primary">People ({plan.participants.length})</h3>
-              <label class="btn btn-xs btn-primary" for="invite-modal">Invite friends</label>
+              {#if canChat}
+                <label class="btn btn-xs btn-primary" for="invite-modal">Invite friends</label>
+              {/if}
             </div>
             <div class="carousel w-full people-carousel">
               {#each plan.participants as person, index}
@@ -617,8 +675,10 @@
                       <p class="font-semibold text-sm">{person.name}</p>
                       {#if person.status === 'organizer'}
                         <span class="badge badge-success badge-xs">Organizer</span>
-                      {:else if person.status === 'paid'}
-                        <span class="text-xs text-primary">Paid</span>
+                      {:else}
+                        <p class="text-xs text-base-content/60">
+                          {person.status === 'admin' ? 'Admin' : 'Participant'}
+                        </p>
                       {/if}
                     </div>
                   </div>
@@ -642,7 +702,8 @@
             <ItineraryTimeline
               activities={activities}
               planStatus={plan.status}
-              addTargetId="add-activity-modal"
+              addTargetId={canProposeActivities ? 'add-activity-modal' : undefined}
+              allowVote={canVote}
               emphasizeAdd={true}
               on:activityUpdate={handleActivityUpdate}
               on:planUpdate={handlePlanUpdate}
@@ -652,10 +713,13 @@
             <div class="hidden lg:block">
               <ParticipantsCard participants={plan.participants} showManage={false}>
                 <svelte:fragment slot="action">
-                  <label class="btn btn-xs btn-primary" for="invite-modal">Invite friends</label>
+                  {#if canChat}
+                    <label class="btn btn-xs btn-primary" for="invite-modal">Invite friends</label>
+                  {/if}
                 </svelte:fragment>
               </ParticipantsCard>
             </div>
+            {#if canChat}
             <div class="hidden lg:block">
               <ChatPanel
                 messages={chatMessages}
@@ -663,6 +727,7 @@
                 on:send={(event) => handleSendMessage(event.detail)}
               />
             </div>
+            {/if}
         </div>
       </div>
 
@@ -730,48 +795,52 @@
       open={paymentSuccessOpen}
     />
 
-    <input id="invite-modal" type="checkbox" class="modal-toggle" bind:checked={inviteModalOpen} />
-    <div class="modal" role="dialog">
-      <div class="modal-box text-center relative">
-        <label for="invite-modal" class="btn btn-ghost btn-sm absolute right-3 top-3">✕</label>
-        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <span class="text-xl">+</span>
+    {#if canChat}
+      <input id="invite-modal" type="checkbox" class="modal-toggle" bind:checked={inviteModalOpen} />
+      <div class="modal" role="dialog">
+        <div class="modal-box text-center relative">
+          <label for="invite-modal" class="btn btn-ghost btn-sm absolute right-3 top-3">✕</label>
+          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <span class="text-xl">+</span>
+          </div>
+          <h3 class="text-lg font-semibold mt-4">Invite Friends</h3>
+          <p class="text-sm text-base-content/70 mt-1">
+            Send this link to friends so they can join the plan.
+          </p>
+          <input
+            class="mt-4 input input-bordered w-full text-sm font-medium"
+            readonly
+            value={
+              inviteLink
+                ? inviteLink.replace('https://', '')
+                : isInviteLoading
+                  ? 'Loading invite link...'
+                  : 'Invite link unavailable'
+            }
+          />
+          {#if inviteStatus}
+            <p class="text-xs text-error mt-2">{inviteStatus}</p>
+          {/if}
+          <button class="btn btn-primary w-full mt-4" on:click={copyInviteLink} disabled={!inviteLink}>
+            {copiedInvite ? 'Copied' : 'Copy link'}
+          </button>
         </div>
-        <h3 class="text-lg font-semibold mt-4">Invite Friends</h3>
-        <p class="text-sm text-base-content/70 mt-1">
-          Send this link to friends so they can join the plan.
-        </p>
-        <input
-          class="mt-4 input input-bordered w-full text-sm font-medium"
-          readonly
-          value={
-            inviteLink
-              ? inviteLink.replace('https://', '')
-              : isInviteLoading
-                ? 'Loading invite link...'
-                : 'Invite link unavailable'
-          }
-        />
-        {#if inviteStatus}
-          <p class="text-xs text-error mt-2">{inviteStatus}</p>
-        {/if}
-        <button class="btn btn-primary w-full mt-4" on:click={copyInviteLink} disabled={!inviteLink}>
-          {copiedInvite ? 'Copied' : 'Copy link'}
-        </button>
+        <label class="modal-backdrop" for="invite-modal">Close</label>
       </div>
-      <label class="modal-backdrop" for="invite-modal">Close</label>
-    </div>
+    {/if}
 
     <!-- Leave plan modal intentionally disabled -->
 
-    <AddActivityModal
-      planId={plan?.id ?? null}
-      planStartDay={plan?.startDay ?? null}
-      planEndDay={plan?.endDay ?? null}
-      modalId="add-activity-modal"
-      bind:open={addActivityOpen}
-      on:activityCreated={handleActivityCreated}
-    />
+    {#if canProposeActivities}
+      <AddActivityModal
+        planId={plan?.id ?? null}
+        planStartDay={plan?.startDay ?? null}
+        planEndDay={plan?.endDay ?? null}
+        modalId="add-activity-modal"
+        bind:open={addActivityOpen}
+        on:activityCreated={handleActivityCreated}
+      />
+    {/if}
 
     {#if lockedActivityNoticeOpen}
       <div class="modal modal-open" role="dialog">
@@ -789,17 +858,19 @@
     {/if}
   </main>
 
-  <button
-    class="btn btn-circle btn-primary fixed bottom-24 right-6 shadow-lg lg:hidden"
-    type="button"
-    on:click={() => (chatOpen = true)}
-  >
-    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M7 11h10v2H7v-2Zm0-4h10v2H7V7Zm12-4H5a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h3.5l3.2 2.4a1 1 0 0 0 1.6-.8V19H19a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3Z" />
-    </svg>
-  </button>
+  {#if canChat}
+    <button
+      class="btn btn-circle btn-primary fixed bottom-24 right-6 shadow-lg lg:hidden"
+      type="button"
+      on:click={() => (chatOpen = true)}
+    >
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M7 11h10v2H7v-2Zm0-4h10v2H7V7Zm12-4H5a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h3.5l3.2 2.4a1 1 0 0 0 1.6-.8V19H19a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3Z" />
+      </svg>
+    </button>
+  {/if}
 
-  {#if chatOpen}
+  {#if canChat && chatOpen}
     <div class="modal modal-open" role="dialog">
       <div class="modal-box max-w-sm">
         <ChatPanel
@@ -820,9 +891,17 @@
   <div class="fixed inset-x-0 bottom-0 z-40 border-t border-base-200 bg-base-100 px-4 py-3 lg:hidden">
     <div class="flex items-center justify-around">
       <button class="btn btn-ghost" type="button" on:click={scrollToTop}>Plan</button>
-      <button class="btn btn-circle btn-primary" type="button" on:click={handleAddActivityClick}>
-        +
-      </button>
+      {#if canProposeActivities}
+        <button
+          class="btn btn-circle btn-primary"
+          type="button"
+          on:click={handleAddActivityClick}
+        >
+          +
+        </button>
+      {:else}
+        <span class="inline-block w-10"></span>
+      {/if}
       <button class="btn btn-ghost" type="button" on:click={openCosts}>Costs</button>
     </div>
   </div>

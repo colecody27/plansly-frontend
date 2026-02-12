@@ -1,7 +1,7 @@
 import type { PageLoad } from './$types';
 import { redirect, isRedirect } from '@sveltejs/kit';
 import type { ApiPlan, ApiPlanWithImages, ApiResponse } from '$lib/api/types';
-import type { PlanDetail } from '$lib/types';
+import type { Participant, PlanDetail } from '$lib/types';
 import { mapPlanDetailFromApi } from '$lib/models/plan';
 import { getBackendBaseUrl } from '$lib/api/client';
 
@@ -39,14 +39,25 @@ export const load: PageLoad = async ({ fetch, params, parent }) => {
 
   const parentData = await parent();
   const profileId = parentData.profile?.id;
-  const isOrganizer = Boolean(
-    profileId &&
-      plan &&
-      (plan.organizer?.id === profileId ||
-        plan.participants.some(
-          (participant) => participant.id === profileId && participant.status === 'organizer'
-        ))
-  );
+  const participant = profileId
+    ? (plan?.participants.find((entry) => entry.id === profileId) ?? null)
+    : null;
 
-  return { plan, statusMessage, isOrganizer };
+  let viewerRole: 'viewer' | 'participant' | 'admin' | 'organizer' = 'viewer';
+  if (profileId && plan) {
+    const isOrganizer =
+      plan.organizer?.id === profileId ||
+      participant?.status === 'organizer';
+    if (isOrganizer) {
+      viewerRole = 'organizer';
+    } else if ((participant?.status as Participant['status'] | undefined) === 'admin') {
+      viewerRole = 'admin';
+    } else if (participant) {
+      viewerRole = 'participant';
+    }
+  }
+
+  const isOrganizer = viewerRole === 'organizer';
+
+  return { plan, statusMessage, viewerRole, isOrganizer };
 };

@@ -35,8 +35,10 @@
               <p class="font-semibold text-sm">{person.name}</p>
               {#if person.status === 'organizer'}
                 <span class="badge badge-success badge-xs">Organizer</span>
-              {:else if person.status === 'paid'}
-                <span class="text-xs text-primary">Paid</span>
+              {:else}
+                <p class="text-xs text-base-content/60">
+                  {person.status === 'admin' ? 'Admin' : 'Participant'}
+                </p>
               {/if}
             </div>
           </div>

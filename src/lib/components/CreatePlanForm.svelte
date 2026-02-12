@@ -17,6 +17,7 @@
 
   let selectedType = 'trip';
   let allowBuyIn = true;
+  let isPublic = false;
   let planName = '';
   let planDescription = '';
   let planDeadline = '';
@@ -340,6 +341,7 @@
         name: trimmedName,
         description: planDescription.trim() || undefined,
         type: payloadType,
+        is_public: isPublic,
         deadline: planDeadline ? new Date(planDeadline).toISOString() : undefined,
         start_day: startDay ? new Date(startDay).toISOString() : undefined,
         end_day: endDay ? new Date(endDay).toISOString() : undefined,
@@ -594,6 +596,15 @@
           <input type="checkbox" class="toggle toggle-primary" bind:checked={allowBuyIn} />
         </div>
       {/if}
+      <div class="flex items-center justify-between rounded-2xl border border-base-200 p-4">
+        <div>
+          <p class="font-semibold">Public plan</p>
+          <p class="text-sm text-base-content/60">
+            Public plans are visible on Explore and can be joined by any user.
+          </p>
+        </div>
+        <input type="checkbox" class="toggle toggle-primary" bind:checked={isPublic} />
+      </div>
     </div>
 
     {#if errorMessage}
