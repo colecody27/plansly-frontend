@@ -137,6 +137,10 @@
     if (activityDateError) {
       return;
     }
+    if (!activityStartDay) {
+      activityDateError = 'Start day is required.';
+      return;
+    }
 
     const trimmedName = activityName.trim();
     if (!trimmedName) {

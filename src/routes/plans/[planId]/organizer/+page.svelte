@@ -541,10 +541,15 @@
     participantManageError = '';
     promotingParticipantId = participantId;
     try {
-      await apiFetch(`/plan/${planId}/admin/${participantId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ is_admin: !isCurrentlyAdmin })
-      });
+      if (isCurrentlyAdmin) {
+        await apiFetch(`/plan/${planId}/participant/${participantId}`, {
+          method: 'PUT'
+        });
+      } else {
+        await apiFetch(`/plan/${planId}/admin/${participantId}`, {
+          method: 'PUT'
+        });
+      }
       await invalidate(`${getBackendBaseUrl()}/plan/${planId}`);
     } catch (error) {
       participantManageError =
@@ -771,6 +776,7 @@
           extraActionVariant="outline"
           extraActionClass="hidden lg:inline-flex"
           inviteTargetId="invite-modal"
+          showInvite={!props.data.plan?.isPublic}
           showMeta={false}
           onInvite={loadInviteLink}
           finalizeLabel={isPlanLocked ? 'Unlock Plan' : 'Finalize Plan'}
@@ -955,7 +961,9 @@
             <div class="flex flex-wrap items-center justify-between gap-2">
               <h3 class="text-lg font-semibold text-primary">People ({participantsWithHost.length})</h3>
               <div class="flex items-center gap-2">
-                <label class="btn btn-xs btn-primary" for="invite-modal">Invite friends</label>
+                {#if !props.data.plan?.isPublic}
+                  <label class="btn btn-xs btn-primary" for="invite-modal">Invite friends</label>
+                {/if}
                 <label class="btn btn-xs btn-ghost text-primary" for="manage-participants-modal">Manage</label>
               </div>
             </div>
@@ -1235,37 +1243,39 @@
       <label class="modal-backdrop" for="payment-reminder-modal">Close</label>
     </div>
 
-    <input id="invite-modal" type="checkbox" class="modal-toggle" bind:checked={inviteModalOpen} />
-    <div class="modal" role="dialog">
-      <div class="modal-box text-center relative">
-        <label for="invite-modal" class="btn btn-ghost btn-sm absolute right-3 top-3">✕</label>
-        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <span class="text-xl">+</span>
+    {#if !props.data.plan?.isPublic}
+      <input id="invite-modal" type="checkbox" class="modal-toggle" bind:checked={inviteModalOpen} />
+      <div class="modal" role="dialog">
+        <div class="modal-box text-center relative">
+          <label for="invite-modal" class="btn btn-ghost btn-sm absolute right-3 top-3">✕</label>
+          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <span class="text-xl">+</span>
+          </div>
+          <h3 class="text-lg font-semibold mt-4">Invite Friends</h3>
+          <p class="text-sm text-base-content/70 mt-1">
+            Send this link to friends so they can join the plan.
+          </p>
+          <input
+            class="mt-4 input input-bordered w-full text-sm font-medium"
+            readonly
+            value={
+              inviteLink
+                ? inviteLink.replace('https://', '')
+                : isInviteLoading
+                  ? 'Loading invite link...'
+                  : 'Invite link pending'
+            }
+          />
+          {#if inviteStatus}
+            <p class="text-xs text-error mt-2">{inviteStatus}</p>
+          {/if}
+          <button class="btn btn-primary w-full mt-4" on:click={copyInviteLink} disabled={!inviteLink}>
+            {copiedInvite ? 'Invite Link Copied' : 'Copy Invite Link'}
+          </button>
         </div>
-        <h3 class="text-lg font-semibold mt-4">Invite Friends</h3>
-        <p class="text-sm text-base-content/70 mt-1">
-          Send this link to friends so they can join the plan.
-        </p>
-        <input
-          class="mt-4 input input-bordered w-full text-sm font-medium"
-          readonly
-          value={
-            inviteLink
-              ? inviteLink.replace('https://', '')
-              : isInviteLoading
-                ? 'Loading invite link...'
-                : 'Invite link pending'
-          }
-        />
-        {#if inviteStatus}
-          <p class="text-xs text-error mt-2">{inviteStatus}</p>
-        {/if}
-        <button class="btn btn-primary w-full mt-4" on:click={copyInviteLink} disabled={!inviteLink}>
-          {copiedInvite ? 'Invite Link Copied' : 'Copy Invite Link'}
-        </button>
+        <label class="modal-backdrop" for="invite-modal">Close</label>
       </div>
-      <label class="modal-backdrop" for="invite-modal">Close</label>
-    </div>
+    {/if}
   </main>
 
   <button

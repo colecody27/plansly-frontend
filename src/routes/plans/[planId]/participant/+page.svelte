@@ -544,7 +544,7 @@
             location={plan.location}
             planStatus={plan.status}
             showFinalize={false}
-            showInvite={canChat}
+            showInvite={canChat && !plan.isPublic}
             showMeta={false}
           />
           <div class="card plan-glass shadow-sm">
@@ -658,7 +658,7 @@
           <div class="card-body gap-4">
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-semibold text-primary">People ({plan.participants.length})</h3>
-              {#if canChat}
+              {#if canChat && !plan.isPublic}
                 <label class="btn btn-xs btn-primary" for="invite-modal">Invite friends</label>
               {/if}
             </div>
@@ -713,7 +713,7 @@
             <div class="hidden lg:block">
               <ParticipantsCard participants={plan.participants} showManage={false}>
                 <svelte:fragment slot="action">
-                  {#if canChat}
+                  {#if canChat && !plan.isPublic}
                     <label class="btn btn-xs btn-primary" for="invite-modal">Invite friends</label>
                   {/if}
                 </svelte:fragment>
@@ -795,7 +795,7 @@
       open={paymentSuccessOpen}
     />
 
-    {#if canChat}
+    {#if canChat && !plan?.isPublic}
       <input id="invite-modal" type="checkbox" class="modal-toggle" bind:checked={inviteModalOpen} />
       <div class="modal" role="dialog">
         <div class="modal-box text-center relative">
